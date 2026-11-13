@@ -142,7 +142,7 @@ Compose는 상태를 표시하고 사용자 이벤트를 전달한다. 게임 �
 - RevealWhoViewModel과 Compose 화면
 - 로컬 문제 데이터와 순수 Kotlin 테스트
 
-기존 스무고개 엔진을 재사용하는 구조가 아니다.
+사용자 질문형 엔진을 재사용하지 않고 단계형 힌트 게임으로 독립 구현한다.
 
 ### 쫑긋 퀴즈
 
@@ -247,12 +247,11 @@ Pleos 기능은 공식 확인과 환경 검증 전 완료로 표시하지 않는
 - `app/src/main/res/drawable-nodpi`: 런처 원본, 대시보드, 단어 게임과 팝업의 활성 `sr_` PNG
 - `app/src/main/res/drawable*`: 런처 아이콘 XML
 - `assets/backgrounds`: 대시보드 배경 원본·편집용 이미지
-- `assets/dashboard`: 대시보드 카드 원본·편집용 이미지
-- `assets/games/imagination`, `assets/games/twenty`: `.gitkeep`만 남은 빈 Legacy 자리표시자 디렉터리
+- `assets/dashboard`: 현재 대시보드 카드 원본·편집용 이미지
 - `docs/design/references`: 최신 확정 시안과 Legacy 참고 시안
 - `docs/design/references/backup`: Git 제외 대상
 
-실행 경로와 루트 `assets`에 있던 미사용 `mt_` 파일 79개는 참조 조사, 프로젝트 외부 백업, SHA-256 검증, 빌드·테스트 후 삭제됐다. 활성 리소스는 `sr_` 이름을 사용한다.
+실행 경로와 루트 `assets`에 있던 미사용 레거시 파일 79개는 참조 조사, 프로젝트 외부 백업, SHA-256 검증, 빌드·테스트 후 삭제됐다. 활성 리소스는 `sr_` 이름을 사용한다.
 
 과거 시안은 실행 리소스가 아니며 사용자 승인 없이 이동·삭제하지 않는다. 새 리소스는 기존 파일을 무단으로 덮어쓰지 않고 출처·용도·라이선스를 확인한다.
 

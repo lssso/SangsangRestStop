@@ -9,7 +9,7 @@
 - [x] Git 이력을 원본 저장소에서 분리하고 SangsangRestStop 저장소 초기화
 - [x] 프로젝트명·앱 이름·런처 아이콘·applicationId 리브랜딩
 - [x] Kotlin namespace와 패키지를 `com.sangsangreststop.app`으로 통일
-- [x] 기존 MallangTori 사용자 노출 브랜드명과 패키지 참조 제거
+- [x] 이전 프로젝트의 사용자 노출 브랜드명과 패키지 참조 제거
 - [x] 단어 짝짝꿍에 기존 WordChain 엔진·화면 재사용
 - [x] 공통 팝업 UI 구현 보존
 - [x] Pleos STT/TTS 어댑터 구현 보존
@@ -31,23 +31,23 @@
 - [x] 이전 프로젝트 디자인 시안을 Legacy 자료로 구분
 - [x] `.idea`, 빌드 산출물, APK, 로컬 설정, 인증정보 제외
 - [x] `docs/design/references/backup` 제외 및 최신 시안 추적 가능 상태 확인
-- [ ] 첫 Commit 직전 staged 파일과 비밀정보 최종 검토
-- [ ] 첫 Git Commit과 Push
+- [x] 첫 Commit 직전 staged 파일과 비밀정보 최종 검토
+- [x] 첫 Git Commit과 GitHub `main` Push
 
 ## Phase 1.1 — Legacy 실행 리소스 정리
 
-- [x] `app/src/main/res`, `assets`, 코드·XML·Manifest·테스트의 `mt_` 참조 전수 조사
+- [x] `app/src/main/res`, `assets`, 코드·XML·Manifest·테스트의 레거시 리소스 접두어 참조 전수 조사
 - [x] 파일명 기반 동적 로딩과 AssetManager 사용 여부 확인
-- [x] 미사용 `mt_` 리소스 79개 삭제 후보 확정
+- [x] 미사용 레거시 리소스 79개 삭제 후보 확정
 - [x] 프로젝트 외부 임시 백업과 SHA-256 79/79 일치 검증
-- [x] 원본 MallangTori 대응 파일 존재와 SHA-256 79/79 일치 확인
+- [x] 분리 원본 프로젝트 대응 파일 존재와 SHA-256 79/79 일치 확인
 - [x] 제거 후 Debug clean build 성공
 - [x] 제거 후 단위 테스트 47개 통과
 - [x] Git 포함 후보 194개만으로 만든 깨끗한 사본 build·test 성공
 - [x] 대시보드·단어 짝짝꿍 설정/진행·공통 팝업 Compose Preview 확인
 - [x] Pleos 에뮬레이터에서 설치·실행과 주요 화면 확인
-- [x] 불필요해진 `mt_*` Git 제외 규칙 제거
-- [x] 활성 앱·빌드 산출물의 `mt_` 잔존 없음 확인
+- [x] 불필요해진 레거시 리소스 Git 제외 규칙 제거
+- [x] 활성 앱·빌드 산출물의 레거시 리소스 접두어 잔존 없음 확인
 - [!] 실제 STT 인식 정확도와 TTS 출력 품질은 별도 검증
 - [!] 런타임 공통 팝업 호출과 동작은 별도 검증
 
@@ -115,7 +115,7 @@
 - [ ] SpeechInput / SpeechOutput 연결
 - [ ] 일시정지·종료·오류 처리
 
-기존 스무고개 엔진을 전제로 하지 않는다. 앱이 힌트를 말하고 사용자가 답하는 별도 게임으로 개발한다.
+사용자 질문형 엔진을 전제로 하지 않는다. 앱이 힌트를 말하고 사용자가 답하는 별도 게임으로 개발한다.
 
 ## Phase 5 — 쫑긋 퀴즈
 
@@ -160,4 +160,4 @@
 
 보존 대상은 `docs/design/references`의 이전 게임·목소리·팝업 시안과 최신 확정 시안이다. 이 자료는 앱 실행 리소스가 아니며 현재 MVP 요구사항과 혼동하지 않는다.
 
-실행 경로와 루트 `assets`에 있던 미사용 `mt_` 파일 79개는 검증 후 삭제 완료했다. `assets/games/imagination`과 `assets/games/twenty`에는 현재 `.gitkeep`만 있으며 Legacy 이미지가 보존돼 있다고 가정하지 않는다.
+실행 경로와 루트 `assets`에 있던 미사용 레거시 파일 79개는 검증 후 삭제 완료했다. 빈 Legacy 자리표시자 디렉터리도 현재 구조에서 제거한다.

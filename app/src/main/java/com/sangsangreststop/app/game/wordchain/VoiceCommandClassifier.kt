@@ -1,6 +1,6 @@
 package com.sangsangreststop.app.game.wordchain
 
-/** 아이 발화를 규칙 기반으로 분류한 결과. LLM 없이 동작하며, 설정을 직접 바꾸지 않는다. */
+/** 아이 발화를 로컬 규칙으로 분류한 결과. 설정을 직접 바꾸지 않는다. */
 sealed interface VoiceCommand {
     /** "보통으로 바꿔줘" 같은 명확한 난이도 지정 */
     data class SetDifficulty(val difficulty: Difficulty) : VoiceCommand

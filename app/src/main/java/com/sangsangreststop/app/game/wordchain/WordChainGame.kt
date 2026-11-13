@@ -92,7 +92,7 @@ sealed interface WordChainEffect {
     data class StartListening(val turnId: Long) : WordChainEffect
     data object StopListening : WordChainEffect
     data object StopSpeaking : WordChainEffect
-    /** 설정 저장은 ViewModel이 Repository로 처리한다. 엔진·LLM은 저장소를 직접 건드리지 않는다. */
+    /** 설정 저장은 ViewModel이 Repository로 처리한다. 게임 엔진은 저장소를 직접 건드리지 않는다. */
     data class SaveSettings(val settings: WordChainGameSettings) : WordChainEffect
     data class GameOver(val result: GameResult) : WordChainEffect
 }

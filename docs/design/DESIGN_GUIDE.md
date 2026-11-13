@@ -55,7 +55,7 @@
 ### 짜잔! 누구?
 
 - 단계별 힌트가 하나씩 공개되는 느낌을 표현한다.
-- 기존 스무고개와 같은 게임으로 보이게 만들지 않는다.
+- 사용자가 예·아니요 질문을 이어 가는 게임으로 보이게 만들지 않는다.
 - 질문 횟수 20개 또는 예·아니요 질문 UI를 사용하지 않는다.
 - 대시보드 카드는 `sr_card_who_*`가 적용됐지만 설정·진행 화면과 전용 삽화는 미구현이다.
 
@@ -212,12 +212,11 @@ Compose Preview와 Debug 팝업 갤러리는 존재하지만 실제 게임·차�
 - `app/src/main/res/drawable-nodpi`: 앱에서 직접 사용하는 `sr_` PNG
 - `app/src/main/res/drawable*`: 런처 아이콘 XML
 - `assets/backgrounds`: 대시보드 배경 원본·편집·재수출용 파일
-- `assets/dashboard`: 대시보드 카드 원본·편집·재수출용 파일
-- `assets/games/imagination`, `assets/games/twenty`: `.gitkeep`만 남은 빈 Legacy 자리표시자 디렉터리
+- `assets/dashboard`: 현재 대시보드 카드 원본·편집·재수출용 파일
 - `docs/design/references`: 최신 확정 시안과 Legacy 참고 시안
 - `docs/design/references/backup`: Git 제외 백업
 
-실행 경로와 루트 `assets`에 있던 미사용 `mt_` 파일 79개는 백업·SHA-256·build·test 검증 후 삭제됐다. 현재 리소스 정책은 삭제된 파일의 보존을 전제로 하지 않는다.
+실행 경로와 루트 `assets`에 있던 미사용 레거시 파일 79개는 백업·SHA-256·build·test 검증 후 삭제됐다. 현재 리소스 정책은 삭제된 파일의 보존을 전제로 하지 않는다.
 
 ## 13. Legacy 참고 자료
 
@@ -230,7 +229,7 @@ Compose Preview와 Debug 팝업 갤러리는 존재하지만 실제 게임·차�
 
 이 자료는 실행 리소스가 아니다. 기존 끝말잇기 시안은 단어 짝짝꿍 구조 참고로, 공통 팝업 시안은 브랜드·문구를 현재 기준으로 해석한 구조 참고로 사용할 수 있다.
 
-`assets/games/imagination`과 `assets/games/twenty` 디렉터리는 `.gitkeep`만 남아 있으며 실행 이미지가 아니다. 삭제된 `mt_card_*`, `mt_game_*` 파일을 현재 보존 자산으로 기재하지 않는다.
+빈 Legacy 자리표시자 디렉터리는 현재 구조에서 제거한다. 삭제된 실행 리소스를 현재 보존 자산으로 기재하지 않는다.
 
 ## 14. Pleos 검증 필요
 

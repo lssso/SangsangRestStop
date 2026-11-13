@@ -5,7 +5,7 @@
 > 대상: Hyundai Pleos Connect Android 앱 공모전
 > 현재 상태: 독립 저장소 리브랜딩과 실행 리소스 정리 완료. 단어 짝짝꿍은 실행 가능하며, 짜잔! 누구?와 쫑긋 퀴즈는 준비중입니다.
 
-상상휴게소는 MallangTori에서 분리한 독립 프로젝트입니다. 원본 프로젝트의 코드와 리소스는 이 저장소에서 변경하지 않습니다.
+상상휴게소는 별도 Git 이력과 원격 저장소를 사용하는 독립 프로젝트입니다. 분리 원본 프로젝트의 코드와 리소스는 이 저장소에서 변경하지 않습니다.
 
 ## 공모전 MVP
 
@@ -18,7 +18,7 @@
 3. **쫑긋 퀴즈**
    - 동물·탈것·악기 소리를 듣고 정답을 맞히는 게임
 
-기존 상상뚝딱과 스무고개는 공모전 MVP에서 제외했습니다. 관련 시안은 `docs/design/references`의 Legacy 참고 자료로만 보존합니다.
+현재 MVP에 포함되지 않는 이전 기획 시안은 `docs/design/references`의 Legacy 참고 자료로만 보존합니다.
 
 ## 현재 구현 상태
 
@@ -72,16 +72,16 @@
 
 2026-11-13 기준 작업 기록과 현재 파일을 대조했습니다.
 
-- 미사용 `mt_` 실행 리소스 79개를 전수 조사 후 삭제
+- 미사용 레거시 실행 리소스 79개를 전수 조사 후 삭제
 - 삭제 전 프로젝트 외부 백업 및 SHA-256 79/79 일치 확인
-- 원본 MallangTori의 대응 파일과 SHA-256 79/79 일치 확인
-- 불필요해진 `mt_*` Git 제외 규칙 제거
+- 분리 원본 프로젝트의 대응 파일과 SHA-256 79/79 일치 확인
+- 불필요해진 레거시 리소스 Git 제외 규칙 제거
 - Debug clean build 성공
 - 기존 단위 테스트 47개 통과
 - Git 포함 후보 194개만 복사한 깨끗한 사본에서도 Debug build와 단위 테스트 성공
 - 대시보드, 단어 짝짝꿍 설정·진행, 게임 종료·일시정지 팝업 Preview 확인
 - Pleos 에뮬레이터에서 설치·실행과 주요 화면 전환 확인
-- 첫 Git Commit과 Push는 아직 수행하지 않음
+- 첫 로컬 Commit과 GitHub `main` Push 완료
 
 빌드·테스트·에뮬레이터 결과는 해당 기준선의 검증 기록입니다. 이후 코드 변경 시 다시 검증해야 합니다.
 
@@ -136,14 +136,12 @@ app/
 assets/
   backgrounds/
   dashboard/
-  games/imagination/  # .gitkeep만 존재
-  games/twenty/       # .gitkeep만 존재
 docs/
   design/references/
 ```
 
 - `app/src/main/res`: 앱 빌드에서 실제 사용하는 `sr_` 리소스
-- `assets/backgrounds`, `assets/dashboard`: 대시보드 원본·편집·재수출용 이미지
+- `assets/backgrounds`, `assets/dashboard`: 현재 대시보드 원본·편집·재수출용 이미지(앱 실행 리소스와 분리)
 - `docs/design/references`: 최신 확정 시안과 Legacy 참고 시안
 - `docs/design/references/backup`: Git 제외 대상
 

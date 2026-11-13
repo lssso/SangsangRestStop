@@ -3,8 +3,7 @@ package com.sangsangreststop.app.game.wordchain
 import kotlin.random.Random
 
 /**
- * AI 차례에 말할 단어를 고른다. 단어장에 있는 단어만 사용하므로 실제로 존재하는 단어임이 보장된다.
- * 나중에 LLM을 붙이더라도 LLM 결과는 이 단어장·규칙 엔진 검증을 통과해야 한다.
+ * 앱 차례에 말할 단어를 고른다. 단어장에 있는 단어만 사용하고 규칙 엔진 검증을 통과한다.
  */
 interface WordProvider {
     /** previousWord가 null이면 게임 첫 단어. 이어갈 단어가 없으면 null. */
