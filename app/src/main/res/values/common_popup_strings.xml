@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_popup_phone_title_accent">전화</string>
+    <string name="common_popup_phone_title_end">가 왔어요!</string>
+    <string name="common_popup_phone_description">통화하는 동안 놀이가 잠시 멈춰요.</string>
+    <string name="common_popup_phone_supporting">통화가 끝나면 다시 이어서 놀 수 있어요!</string>
+    <string name="common_popup_phone_call">통화하기</string>
+
+    <string name="common_popup_navigation_title_accent">내비게이션</string>
+    <string name="common_popup_navigation_title_end"> 안내 중이에요!</string>
+    <string name="common_popup_navigation_description">안전을 위해 안내가 끝날 때까지 놀이가 잠시 멈춰요.</string>
+    <string name="common_popup_navigation_supporting">안내가 끝나면 다시 이어서 놀 수 있어요!</string>
+    <string name="common_popup_confirm">확인</string>
+
+    <string name="common_popup_error_title_accent">잠깐</string>
+    <string name="common_popup_error_title_end"> 문제가 생겼어요!</string>
+    <string name="common_popup_error_speech_description">음성이 잘 들리지 않았어요.</string>
+    <string name="common_popup_error_speech_supporting">조금 더 또렷하게 말하거나 잠시 후 다시 시도해 주세요.</string>
+    <string name="common_popup_error_network_description">네트워크 연결이 불안정해요.</string>
+    <string name="common_popup_error_network_supporting">연결을 확인하고 잠시 후 다시 시도해 주세요.</string>
+    <string name="common_popup_error_reassurance">괜찮아요. 다시 시도하면 이어서 놀 수 있어요.</string>
+    <string name="common_popup_retry">다시 시도</string>
+
+    <string name="common_popup_resume_reassurance">걱정하지 마세요. 하던 놀이는 그대로 이어져요.</string>
+    <string name="common_popup_home">홈으로 가기</string>
+    <string name="common_popup_stop">그만할래</string>
+
+    <string name="common_popup_end_title_start">오늘도 </string>
+    <string name="common_popup_end_title_accent">즐거운</string>
+    <string name="common_popup_end_title_end"> 놀이였어요!</string>
+    <string name="common_popup_end_description">다음에도 또 함께 놀아요!</string>
+    <string name="common_popup_replay">다시 놀기</string>
+    <string name="common_popup_replay_supporting">같은 게임을 다시 시작해요</string>
+    <string name="common_popup_home_supporting">다른 놀이를 선택해요</string>
+    <string name="common_popup_stop_supporting">오늘은 여기까지!</string>
+
+    <string name="common_popup_pause_title">잠깐 쉬는 중이에요!</string>
+    <string name="common_popup_pause_description">곧 다시 놀 수 있어요.</string>
+    <string name="common_popup_resume">조금만 더 놀게요</string>
+    <string name="common_popup_resume_supporting">다시 이어서 놀아요</string>
+    <string name="common_popup_end_game">게임 그만하기</string>
+    <string name="common_popup_end_game_supporting">처음으로 돌아가요</string>
+    <string name="common_popup_voice_settings">목소리 설정하기</string>
+    <string name="common_popup_voice_settings_supporting">다른 친구 목소리로 놀아요</string>
+</resources>

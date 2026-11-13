@@ -1,0 +1,46 @@
+*.iml
+/.idea/
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Packaged Android build outputs
+*.apk
+*.aab
+*.apks
+*.idsig
+
+# Android Studio machine-local state
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+/.idea/shelf/
+
+# Local credentials and environment files
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+key.properties
+keystore.properties
+.env
+.env.*
+/app/google-services.json
+google-services.json
+service-account*.json
+firebase-adminsdk*.json
+
+# Legacy design reference backups
+/docs/design/references/backup/

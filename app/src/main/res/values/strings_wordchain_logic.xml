@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 단어 짝짝꿍(끝말잇기 엔진) 연결용 문구 (UI 공용 strings.xml과 충돌하지 않도록 분리) -->
+<resources>
+    <string name="wordchain_input_title">단어를 입력해 주세요</string>
+    <string name="wordchain_input_placeholder">예: 과자</string>
+    <string name="wordchain_input_submit">말하기</string>
+    <string name="wordchain_input_cancel">닫기</string>
+</resources>
