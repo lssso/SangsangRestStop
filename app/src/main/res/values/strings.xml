@@ -64,14 +64,15 @@
     <string name="reveal_who_previous">이전으로</string>
     <string name="reveal_who_start">게임 시작하기</string>
     <string name="reveal_who_play_title">짜잔! 누구?</string>
-    <string name="reveal_who_play_problem">문제 1</string>
-    <string name="reveal_who_play_hint_progress">힌트 2 / 4</string>
-    <string name="reveal_who_play_hint">나는 목이 아주 길어요!</string>
+    <string name="reveal_who_play_problem">문제 %1$d</string>
+    <string name="reveal_who_play_hint_progress">힌트 %1$d / %2$d</string>
     <string name="reveal_who_play_answer_prompt">정답을 말해보세요!</string>
+    <string name="reveal_who_play_speaking_prompt">힌트를 잘 들어보세요!</string>
+    <string name="reveal_who_play_mic_prompt">마이크를 누르고 말해보세요!</string>
+    <string name="reveal_who_play_finished_prompt">다음에 또 놀아요!</string>
     <string name="reveal_who_play_replay">다시 듣기</string>
     <string name="reveal_who_play_next_hint">다음 힌트</string>
     <string name="reveal_who_play_stop">그만하기</string>
-    <string name="reveal_who_play_unavailable_message">음성 재생과 힌트 진행은 게임 엔진 연결 후 사용할 수 있어요.</string>
 
     <string name="wordchain_setup_title">단어 짝짝꿍</string>
     <string name="wordchain_setup_question">어떻게 놀아볼까요?</string>
