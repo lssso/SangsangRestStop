@@ -23,6 +23,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sangsangreststop.app.feature.dashboard.DashboardGame
 import com.sangsangreststop.app.feature.dashboard.DashboardScreen
+import com.sangsangreststop.app.feature.revealwho.RevealWhoPlayScreen
+import com.sangsangreststop.app.feature.revealwho.RevealWhoSettings
+import com.sangsangreststop.app.feature.revealwho.RevealWhoSetupScreen
 import com.sangsangreststop.app.feature.voicepoc.VoicePocScreen
 import com.sangsangreststop.app.feature.wordchain.WordChainDifficulty
 import com.sangsangreststop.app.feature.wordchain.WordChainPlayScreen
@@ -32,6 +35,10 @@ import com.sangsangreststop.app.feature.wordchain.WordChainTextInputDialog
 import com.sangsangreststop.app.feature.wordchain.WordChainViewModel
 import com.sangsangreststop.app.feature.wordchain.toUiSettings
 import com.sangsangreststop.app.ui.components.SangsangRestStopPopupOverlay
+import com.sangsangreststop.app.ui.components.popup.CommonPopupAction
+import com.sangsangreststop.app.ui.components.popup.CommonPopupOverlay
+import com.sangsangreststop.app.ui.components.popup.CommonPopupType
+import com.sangsangreststop.app.ui.components.popup.commonPopupModel
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberUpdatedState
@@ -61,6 +68,8 @@ private fun WordChainPlayLifecycle(onBackground: () -> Unit, onForeground: () ->
 
 private enum class AppDestination {
     Dashboard,
+    RevealWhoSetup,
+    RevealWhoPlay,
     WordChainSetup,
     WordChainPlay,
     VoicePoc,
@@ -70,6 +79,13 @@ private enum class AppDestination {
 fun SangsangRestStopApp(modifier: Modifier = Modifier) {
     var destination by rememberSaveable { mutableStateOf(AppDestination.Dashboard) }
     var unavailableGame by rememberSaveable { mutableStateOf<DashboardGame?>(null) }
+    var revealWhoSettings by remember { mutableStateOf<RevealWhoSettings?>(null) }
+    var showRevealWhoActionUnavailable by rememberSaveable {
+        mutableStateOf(value = false)
+    }
+    var showRevealWhoStopPopup by rememberSaveable {
+        mutableStateOf(value = false)
+    }
     var wordChainSettings by remember { mutableStateOf<WordChainSettings?>(null) }
     var showWordInput by remember { mutableStateOf(false) }
     val wordChainViewModel: WordChainViewModel = viewModel()
@@ -85,12 +101,22 @@ fun SangsangRestStopApp(modifier: Modifier = Modifier) {
     BackHandler(enabled = unavailableGame != null) {
         unavailableGame = null
     }
+    BackHandler(enabled = showRevealWhoActionUnavailable) {
+        showRevealWhoActionUnavailable = false
+    }
+    BackHandler(enabled = showRevealWhoStopPopup) {
+        showRevealWhoStopPopup = false
+    }
     BackHandler(
-        enabled = (unavailableGame == null) && (destination != AppDestination.Dashboard),
+        enabled = (unavailableGame == null) &&
+            !showRevealWhoActionUnavailable &&
+            !showRevealWhoStopPopup &&
+            (destination != AppDestination.Dashboard),
     ) {
         if (destination == AppDestination.WordChainPlay) wordChainViewModel.endGame()
         destination = when (destination) {
             AppDestination.WordChainPlay -> AppDestination.WordChainSetup
+            AppDestination.RevealWhoPlay -> AppDestination.RevealWhoSetup
             else -> AppDestination.Dashboard
         }
     }
@@ -104,13 +130,37 @@ fun SangsangRestStopApp(modifier: Modifier = Modifier) {
                 AppDestination.Dashboard -> {
                     DashboardScreen(
                         onGameSelected = { game ->
-                            if (game == DashboardGame.WordChain) {
-                                destination = AppDestination.WordChainSetup
-                            } else {
-                                unavailableGame = game
+                            destination = when (game) {
+                                DashboardGame.WordChain -> AppDestination.WordChainSetup
+                                DashboardGame.RevealWho -> AppDestination.RevealWhoSetup
+                                DashboardGame.SoundQuiz -> {
+                                    unavailableGame = game
+                                    AppDestination.Dashboard
+                                }
                             }
                         },
                         onOpenVoicePoc = { destination = AppDestination.VoicePoc },
+                    )
+                }
+
+                AppDestination.RevealWhoSetup -> {
+                    RevealWhoSetupScreen(
+                        onBack = { destination = AppDestination.Dashboard },
+                        onStart = { settings ->
+                            revealWhoSettings = settings
+                            destination = AppDestination.RevealWhoPlay
+                        },
+                        initialSettings = revealWhoSettings ?: RevealWhoSettings(),
+                    )
+                }
+
+                AppDestination.RevealWhoPlay -> {
+                    RevealWhoPlayScreen(
+                        settings = revealWhoSettings ?: RevealWhoSettings(),
+                        onBackClick = { destination = AppDestination.RevealWhoSetup },
+                        onReplayClick = { showRevealWhoActionUnavailable = true },
+                        onNextHintClick = { showRevealWhoActionUnavailable = true },
+                        onStopClick = { showRevealWhoStopPopup = true },
                     )
                 }
 
@@ -204,6 +254,36 @@ fun SangsangRestStopApp(modifier: Modifier = Modifier) {
                     ),
                     confirmLabel = stringResource(R.string.dashboard_confirm),
                     onDismiss = { unavailableGame = null },
+                )
+            }
+
+            if (showRevealWhoActionUnavailable) {
+                SangsangRestStopPopupOverlay(
+                    title = stringResource(R.string.dashboard_unavailable_title),
+                    message = stringResource(R.string.reveal_who_play_unavailable_message),
+                    confirmLabel = stringResource(R.string.dashboard_confirm),
+                    onDismiss = { showRevealWhoActionUnavailable = false },
+                )
+            }
+
+            if (showRevealWhoStopPopup) {
+                CommonPopupOverlay(
+                    model = commonPopupModel(CommonPopupType.GAME_PAUSE),
+                    onAction = { action ->
+                        when (action) {
+                            CommonPopupAction.RESUME -> showRevealWhoStopPopup = false
+                            CommonPopupAction.STOP -> {
+                                showRevealWhoStopPopup = false
+                                destination = AppDestination.Dashboard
+                            }
+                            CommonPopupAction.VOICE_SETTINGS -> {
+                                showRevealWhoStopPopup = false
+                                unavailableGame = DashboardGame.RevealWho
+                            }
+                            else -> showRevealWhoStopPopup = false
+                        }
+                    },
+                    onDismissRequest = { showRevealWhoStopPopup = false },
                 )
             }
 

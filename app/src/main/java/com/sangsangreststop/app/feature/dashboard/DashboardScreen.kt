@@ -212,7 +212,7 @@ private fun dashboardCards(): List<DashboardCardModel> = listOf(
         titleColor = Color(0xFF10529A),
         accentColor = Color(0xFF2E87F4),
         artworkWidthFraction = 0.88f,
-        enabled = false,
+        enabled = true,
     ),
     DashboardCardModel(
         game = DashboardGame.SoundQuiz,

@@ -44,6 +44,35 @@
     <string name="dashboard_unavailable_message">%1$s 화면은 다음 단계에서 안전하게 연결할게요.</string>
     <string name="dashboard_confirm">확인</string>
 
+    <string name="reveal_who_breadcrumb">상상휴게소  &gt;  짜잔! 누구?  &gt;  게임 설정</string>
+    <string name="reveal_who_setup_title">짜잔! 누구?</string>
+    <string name="reveal_who_setup_subtitle">힌트를 듣고 정답을 맞혀봐!</string>
+    <string name="reveal_who_hint_bubble">힌트를 듣고\n무엇인지\n맞혀볼까요?</string>
+    <string name="reveal_who_difficulty_title">난이도 선택</string>
+    <string name="reveal_who_difficulty_prompt">어떤 수준으로 할까요?</string>
+    <string name="reveal_who_difficulty_easy">쉬움</string>
+    <string name="reveal_who_difficulty_easy_description">비교적 쉽게 맞출 수 있어요</string>
+    <string name="reveal_who_difficulty_normal">보통</string>
+    <string name="reveal_who_difficulty_normal_description">적당한 난이도로 도전해요</string>
+    <string name="reveal_who_difficulty_hard">어려움</string>
+    <string name="reveal_who_difficulty_hard_description">조금 더 어려운 문제로 도전해요</string>
+    <string name="reveal_who_category_title">문제 주제 선택</string>
+    <string name="reveal_who_category_prompt">어떤 주제로 맞혀볼까요?</string>
+    <string name="reveal_who_category_animal">동물</string>
+    <string name="reveal_who_category_vehicle">탈것</string>
+    <string name="reveal_who_category_object">사물</string>
+    <string name="reveal_who_previous">이전으로</string>
+    <string name="reveal_who_start">게임 시작하기</string>
+    <string name="reveal_who_play_title">짜잔! 누구?</string>
+    <string name="reveal_who_play_problem">문제 1</string>
+    <string name="reveal_who_play_hint_progress">힌트 2 / 4</string>
+    <string name="reveal_who_play_hint">나는 목이 아주 길어요!</string>
+    <string name="reveal_who_play_answer_prompt">정답을 말해보세요!</string>
+    <string name="reveal_who_play_replay">다시 듣기</string>
+    <string name="reveal_who_play_next_hint">다음 힌트</string>
+    <string name="reveal_who_play_stop">그만하기</string>
+    <string name="reveal_who_play_unavailable_message">음성 재생과 힌트 진행은 게임 엔진 연결 후 사용할 수 있어요.</string>
+
     <string name="wordchain_setup_title">단어 짝짝꿍</string>
     <string name="wordchain_setup_question">어떻게 놀아볼까요?</string>
     <string name="wordchain_setup_description">AI와 번갈아 단어를 이어가며\n생각이 안 나면 힌트도 받을 수 있어요.</string>
