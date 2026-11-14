@@ -30,8 +30,23 @@ class LexiconWordProvider(
         // 아이가 이어갈 수 있는 끝 글자를 우선한다 (쉬움은 레벨 1 단어로 이어갈 수 있어야 함).
         val childLevelLimit = if (settings.difficulty == Difficulty.EASY) 1 else 3
         val connectable = pool.filter { canContinue(it.word, usedWords + it.word, childLevelLimit) }
-        val finalPool = connectable.ifEmpty { pool }
+        // 한 수 더 내다본다: 아이가 이어 말할 만한 단어 뒤에도 AI가 이어갈 수 있는 단어를 우선한다.
+        // 그래야 아이의 다음 단어 끝 글자에서 AI가 바로 막혀 판이 일찍 끝나는 일이 줄어든다.
+        val safe = connectable.filter { isSafeForNextTurn(it.word, usedWords + it.word, childLevelLimit) }
+        val finalPool = safe.ifEmpty { connectable }.ifEmpty { pool }
         return finalPool[random.nextInt(finalPool.size)]
+    }
+
+    /**
+     * AI가 [word]를 말했을 때, 아이가 쓸 만한 단어(maxLevel 이하) 가운데 AI가 다시 이어갈 수 있는 단어가
+     * 절반 이상인지. 아이는 단어장 밖의 단어도 말할 수 있으므로 단어장 단어를 대표 표본으로 쓴다.
+     */
+    private fun isSafeForNextTurn(word: String, usedWords: Set<String>, maxLevel: Int): Boolean {
+        val replies = lexicon.startingWith(WordChainRules.allowedStarts(word, config))
+            .filter { it.level <= maxLevel && it.word !in usedWords && it.word.length >= config.minLength }
+        if (replies.isEmpty()) return false
+        val continuable = replies.count { canContinue(it.word, usedWords + it.word) }
+        return continuable * 2 >= replies.size
     }
 
     /** 난이도별로 단어 수준을 섞는다. 원하는 레벨이 없으면 가까운 레벨로 물러난다. */

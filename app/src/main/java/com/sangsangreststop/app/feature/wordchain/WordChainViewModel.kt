@@ -1,13 +1,12 @@
 package com.sangsangreststop.app.feature.wordchain
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.sangsangreststop.app.core.audio.ToneListeningCue
 import com.sangsangreststop.app.core.settings.WordChainSettingsRepository
-import com.sangsangreststop.app.core.voice.AndroidTtsSpeechOutput
-import com.sangsangreststop.app.core.voice.PleosSpeechInput
-import com.sangsangreststop.app.core.voice.PleosSpeechOutput
+import com.sangsangreststop.app.core.voice.CuedSpeechInput
+import com.sangsangreststop.app.core.voice.SharedVoice
 import com.sangsangreststop.app.core.voice.SpeechInput
 import com.sangsangreststop.app.core.voice.SpeechInputError
 import com.sangsangreststop.app.core.voice.SpeechOutput
@@ -39,16 +38,11 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val repository = WordChainSettingsRepository(application)
     private val game = WordChainGame()
-    // Pleos 음성 합성을 우선 쓰고, 쓸 수 없으면 Android 기본 TTS로 넘어간다
-    private val speech: SpeechOutput = runCatching {
-        PleosSpeechOutput(application) { AndroidTtsSpeechOutput(application) }
-    }.getOrElse {
-        Log.w(TAG, "Pleos TTS unavailable", it)
-        AndroidTtsSpeechOutput(application)
-    }
-    private val speechInput: SpeechInput? = runCatching { PleosSpeechInput(application) }
-        .onFailure { Log.w(TAG, "Pleos STT unavailable", it) }
-        .getOrNull()
+    // 음성 장치는 다른 게임과 공유한다 (Pleos 서비스가 앱마다 콜백을 하나만 유지하기 때문)
+    private val speech: SpeechOutput = SharedVoice.speechOutput(application)
+    // 듣기 직전에 '띵동!' 안내음을 내고, 안내음이 끝난 뒤 실제 듣기를 시작한다
+    private val speechInput: CuedSpeechInput? = SharedVoice.speechInput(application)
+        ?.let { CuedSpeechInput(it, ToneListeningCue()) }
 
     /** 저장된 설정. 불러오기 전에는 null. */
     val savedSettings: StateFlow<WordChainGameSettings?> =
@@ -58,6 +52,8 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
     private val speaking = MutableStateFlow(false)
     private val listening = MutableStateFlow(false)
     private var listenJob: Job? = null
+    /** 글자 입력 창이 열려 있으면 true */
+    private var textInputOpen = false
 
     val playUiState: StateFlow<WordChainPlayUiState> =
         combine(gameState, speaking, listening) { state, isSpeaking, isListening ->
@@ -80,6 +76,7 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** 화면을 떠날 때 진행 중인 게임 세션을 끝낸다. 저장된 설정은 그대로 둔다. */
     fun endGame() {
+        textInputOpen = false
         if (gameState.value != null) dispatch(WordChainAction.Stop)
         speech.stop()
         stopListening()
@@ -90,9 +87,22 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
     fun onMicClick() = dispatch(WordChainAction.MicButton)
 
     /** 글자 입력 창을 여는 동안에는 듣기를 멈춘다. */
-    fun onTextInputOpened() = stopListening()
+    fun onTextInputOpened() {
+        textInputOpen = true
+        stopListening()
+    }
 
-    fun onTextEntered(text: String) = dispatch(WordChainAction.TextEntered(text))
+    /** 글자를 입력하지 않고 창을 닫으면 다시 '띵동!' → 듣기로 돌아간다. */
+    fun onTextInputClosed() {
+        if (!textInputOpen) return
+        textInputOpen = false
+        dispatch(WordChainAction.MicButton)
+    }
+
+    fun onTextEntered(text: String) {
+        textInputOpen = false
+        dispatch(WordChainAction.TextEntered(text))
+    }
     fun onHintClick() = dispatch(WordChainAction.HintButton)
     fun onReplayClick() = dispatch(WordChainAction.ReplayButton)
     fun onExampleClick() = dispatch(WordChainAction.ExampleButton)
@@ -134,6 +144,8 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun startListening(turnId: Long) {
         stopListening()
+        // 글자 입력 창이 열려 있는 동안에는 주변 소리가 답으로 들어가지 않도록 듣지 않는다
+        if (textInputOpen) return
         val input = speechInput
         if (input == null || !input.isAvailable) {
             dispatch(WordChainAction.VoiceUnavailable)
@@ -143,7 +155,6 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
             // TTS 소리가 마이크로 다시 들어가지 않도록 잠깐 기다린 뒤 듣는다
             delay(LISTEN_DELAY_MS)
             if (gameState.value?.turnId != turnId) return@launch
-            listening.value = true
             input.start(object : SpeechInput.Listener {
                 override fun onResult(text: String) {
                     listening.value = false
@@ -164,14 +175,17 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
                             dispatch(WordChainAction.RecognitionFailed(turnId))
                     }
                 }
-            })
+            }) {
+                // 안내음이 끝나 실제로 듣기 시작하는 순간에 화면의 듣기 표시를 켠다
+                listening.value = true
+            }
         }
     }
 
     private fun stopListening() {
         listenJob?.cancel()
         listenJob = null
-        if (listening.value) speechInput?.stop()
+        speechInput?.stop() // 재생 중인 안내음도 함께 끊는다
         listening.value = false
     }
 
@@ -180,12 +194,12 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     override fun onCleared() {
-        speech.release()
+        // 공유 음성 장치는 해제하지 않고 멈추기만 한다
+        speech.stop()
         speechInput?.release()
     }
 
     private companion object {
-        const val TAG = "WordChainViewModel"
         const val LISTEN_DELAY_MS = 400L
     }
 }

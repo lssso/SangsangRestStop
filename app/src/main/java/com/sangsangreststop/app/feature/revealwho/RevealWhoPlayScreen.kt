@@ -43,10 +43,10 @@ import com.sangsangreststop.app.ui.theme.SangsangRestStopNavy
 import com.sangsangreststop.app.ui.theme.SangsangRestStopTheme
 
 /**
- * 「짜잔! 누구?」 진행 화면의 UI 미리보기.
+ * 「짜잔! 누구?」 진행 화면.
  *
- * [settings]는 다음 단계에서 게임 엔진을 연결할 때 문제 생성 조건으로 전달할 값이다.
- * 현재 화면은 문제 생성, 힌트 진행, 음성 입출력을 수행하지 않는다.
+ * 문제 번호·힌트 단계·힌트 문구·음성 상태는 [uiState]를 그대로 그린다.
+ * 게임 진행과 음성 입출력은 RevealWhoViewModel이 맡고, 화면은 이벤트만 전달한다.
  */
 @Composable
 fun RevealWhoPlayScreen(
@@ -56,6 +56,8 @@ fun RevealWhoPlayScreen(
     onNextHintClick: () -> Unit,
     onStopClick: () -> Unit,
     modifier: Modifier = Modifier,
+    uiState: RevealWhoPlayUiState = RevealWhoPlayUiState(),
+    onMicClick: () -> Unit = {},
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -108,6 +110,7 @@ fun RevealWhoPlayScreen(
             )
 
             ProgressPill(
+                uiState = uiState,
                 compact = compact,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -197,6 +200,7 @@ fun RevealWhoPlayScreen(
             )
 
             HintBubble(
+                hintText = uiState.hintText,
                 compact = compact,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -207,6 +211,8 @@ fun RevealWhoPlayScreen(
             )
 
             AnswerPanel(
+                uiState = uiState,
+                onMicClick = onMicClick,
                 compact = compact,
                 modifier = Modifier
                     .offset(x = horizontalPadding, y = answerTop)
@@ -279,6 +285,7 @@ private fun PlayHeader(
 
 @Composable
 private fun ProgressPill(
+    uiState: RevealWhoPlayUiState,
     compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -299,7 +306,7 @@ private fun ProgressPill(
                 fontSize = if (compact) 18.sp else 24.sp,
             )
             Text(
-                text = stringResource(R.string.reveal_who_play_problem),
+                text = stringResource(R.string.reveal_who_play_problem, uiState.questionNumber),
                 color = SangsangRestStopNavy,
                 fontSize = if (compact) 23.sp else 29.sp,
                 fontWeight = FontWeight.Black,
@@ -317,7 +324,11 @@ private fun ProgressPill(
                 contentScale = ContentScale.Fit,
             )
             Text(
-                text = stringResource(R.string.reveal_who_play_hint_progress),
+                text = stringResource(
+                    R.string.reveal_who_play_hint_progress,
+                    uiState.hintNumber,
+                    uiState.hintCount,
+                ),
                 color = SangsangRestStopNavy,
                 fontSize = if (compact) 23.sp else 29.sp,
                 fontWeight = FontWeight.Black,
@@ -328,6 +339,7 @@ private fun ProgressPill(
 
 @Composable
 private fun HintBubble(
+    hintText: String,
     compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -365,13 +377,13 @@ private fun HintBubble(
                 contentScale = ContentScale.Fit,
             )
             Text(
-                text = stringResource(R.string.reveal_who_play_hint),
+                text = hintText,
                 color = SangsangRestStopNavy,
                 fontSize = if (compact) 33.sp else 40.sp,
                 lineHeight = if (compact) 39.sp else 46.sp,
                 fontWeight = FontWeight.Black,
                 textAlign = TextAlign.Center,
-                maxLines = if (compact) 2 else 1,
+                maxLines = 2,
             )
         }
     }
@@ -379,6 +391,8 @@ private fun HintBubble(
 
 @Composable
 private fun AnswerPanel(
+    uiState: RevealWhoPlayUiState,
+    onMicClick: () -> Unit,
     compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -403,6 +417,7 @@ private fun AnswerPanel(
                     contentScale = ContentScale.Fit,
                 )
                 Surface(
+                    onClick = onMicClick,
                     modifier = Modifier.size(if (compact) 116.dp else 150.dp),
                     color = Color.White.copy(alpha = 0.62f),
                     shape = CircleShape,
@@ -426,7 +441,14 @@ private fun AnswerPanel(
                 )
             }
             Text(
-                text = stringResource(R.string.reveal_who_play_answer_prompt),
+                text = stringResource(
+                    when {
+                        uiState.isFinished -> R.string.reveal_who_play_finished_prompt
+                        uiState.voiceState == RevealWhoVoiceState.SPEAKING -> R.string.reveal_who_play_speaking_prompt
+                        uiState.voiceState == RevealWhoVoiceState.LISTENING -> R.string.reveal_who_play_answer_prompt
+                        else -> R.string.reveal_who_play_mic_prompt
+                    },
+                ),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = if (compact) 18.dp else 25.dp),
