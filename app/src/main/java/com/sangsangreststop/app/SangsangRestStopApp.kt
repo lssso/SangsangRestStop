@@ -231,7 +231,10 @@ fun SangsangRestStopApp(modifier: Modifier = Modifier) {
                                     showWordInput = false
                                     wordChainViewModel.onTextEntered(text)
                                 },
-                                onDismiss = { showWordInput = false },
+                                onDismiss = {
+                                    showWordInput = false
+                                    wordChainViewModel.onTextInputClosed()
+                                },
                             )
                         }
                     } else {

@@ -52,6 +52,8 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
     private val speaking = MutableStateFlow(false)
     private val listening = MutableStateFlow(false)
     private var listenJob: Job? = null
+    /** 글자 입력 창이 열려 있으면 true */
+    private var textInputOpen = false
 
     val playUiState: StateFlow<WordChainPlayUiState> =
         combine(gameState, speaking, listening) { state, isSpeaking, isListening ->
@@ -74,6 +76,7 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** 화면을 떠날 때 진행 중인 게임 세션을 끝낸다. 저장된 설정은 그대로 둔다. */
     fun endGame() {
+        textInputOpen = false
         if (gameState.value != null) dispatch(WordChainAction.Stop)
         speech.stop()
         stopListening()
@@ -84,9 +87,22 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
     fun onMicClick() = dispatch(WordChainAction.MicButton)
 
     /** 글자 입력 창을 여는 동안에는 듣기를 멈춘다. */
-    fun onTextInputOpened() = stopListening()
+    fun onTextInputOpened() {
+        textInputOpen = true
+        stopListening()
+    }
 
-    fun onTextEntered(text: String) = dispatch(WordChainAction.TextEntered(text))
+    /** 글자를 입력하지 않고 창을 닫으면 다시 '띵동!' → 듣기로 돌아간다. */
+    fun onTextInputClosed() {
+        if (!textInputOpen) return
+        textInputOpen = false
+        dispatch(WordChainAction.MicButton)
+    }
+
+    fun onTextEntered(text: String) {
+        textInputOpen = false
+        dispatch(WordChainAction.TextEntered(text))
+    }
     fun onHintClick() = dispatch(WordChainAction.HintButton)
     fun onReplayClick() = dispatch(WordChainAction.ReplayButton)
     fun onExampleClick() = dispatch(WordChainAction.ExampleButton)
@@ -128,6 +144,8 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun startListening(turnId: Long) {
         stopListening()
+        // 글자 입력 창이 열려 있는 동안에는 주변 소리가 답으로 들어가지 않도록 듣지 않는다
+        if (textInputOpen) return
         val input = speechInput
         if (input == null || !input.isAvailable) {
             dispatch(WordChainAction.VoiceUnavailable)
