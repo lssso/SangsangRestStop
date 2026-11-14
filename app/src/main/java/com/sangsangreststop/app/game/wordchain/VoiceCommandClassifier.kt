@@ -43,7 +43,9 @@ object VoiceCommandClassifier {
     private val CORRECTION_CUES = listOf("그거말고", "다시말할게", "잘못말했어", "잘못말했어요", "아니야", "아니")
     private val CORRECTION_FILLERS = listOf("요", "고", "야")
 
-    fun classify(text: String, awaitingAnswer: Boolean = false): VoiceCommand {
+    fun classify(raw: String, awaitingAnswer: Boolean = false): VoiceCommand {
+        // STT가 "1기"처럼 숫자로 적어 준 부분은 한글 읽기로 바꾼 뒤 판정한다
+        val text = SpokenNumbers.toHangul(raw)
         val compact = WordChainRules.normalize(text)
         if (compact.isEmpty()) return VoiceCommand.Word("")
 

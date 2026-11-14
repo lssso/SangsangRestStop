@@ -1,5 +1,7 @@
 package com.sangsangreststop.app.game.revealwho
 
+import com.sangsangreststop.app.game.wordchain.SpokenNumbers
+
 /** 아이 발화를 로컬 규칙으로 분류한 결과. */
 enum class RevealWhoUtterance {
     /** 정답을 말함 */
@@ -30,8 +32,8 @@ object RevealWhoAnswerJudge {
     /** 답으로 보기에는 너무 긴 문장의 어절 수 */
     private const val SENTENCE_TOKENS = 4
 
-    /** 한글만 남긴다 (공백·문장부호·영문·숫자 제거). */
-    fun normalize(text: String): String = text.filter { it in '가'..'힣' }
+    /** 숫자는 한글 읽기로 바꾸고("1기" → "일기"), 한글만 남긴다 (공백·문장부호·영문 제거). */
+    fun normalize(text: String): String = SpokenNumbers.toHangul(text).filter { it in '가'..'힣' }
 
     fun isCorrect(utterance: String, question: RevealWhoQuestion): Boolean {
         val compact = normalize(utterance)
