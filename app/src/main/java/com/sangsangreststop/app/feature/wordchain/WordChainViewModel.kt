@@ -1,15 +1,12 @@
 package com.sangsangreststop.app.feature.wordchain
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sangsangreststop.app.core.audio.ToneListeningCue
 import com.sangsangreststop.app.core.settings.WordChainSettingsRepository
-import com.sangsangreststop.app.core.voice.AndroidTtsSpeechOutput
 import com.sangsangreststop.app.core.voice.CuedSpeechInput
-import com.sangsangreststop.app.core.voice.PleosSpeechInput
-import com.sangsangreststop.app.core.voice.PleosSpeechOutput
+import com.sangsangreststop.app.core.voice.SharedVoice
 import com.sangsangreststop.app.core.voice.SpeechInput
 import com.sangsangreststop.app.core.voice.SpeechInputError
 import com.sangsangreststop.app.core.voice.SpeechOutput
@@ -41,17 +38,10 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val repository = WordChainSettingsRepository(application)
     private val game = WordChainGame()
-    // Pleos 음성 합성을 우선 쓰고, 쓸 수 없으면 Android 기본 TTS로 넘어간다
-    private val speech: SpeechOutput = runCatching {
-        PleosSpeechOutput(application) { AndroidTtsSpeechOutput(application) }
-    }.getOrElse {
-        Log.w(TAG, "Pleos TTS unavailable", it)
-        AndroidTtsSpeechOutput(application)
-    }
+    // 음성 장치는 다른 게임과 공유한다 (Pleos 서비스가 앱마다 콜백을 하나만 유지하기 때문)
+    private val speech: SpeechOutput = SharedVoice.speechOutput(application)
     // 듣기 직전에 '띵동!' 안내음을 내고, 안내음이 끝난 뒤 실제 듣기를 시작한다
-    private val speechInput: CuedSpeechInput? = runCatching { PleosSpeechInput(application) }
-        .onFailure { Log.w(TAG, "Pleos STT unavailable", it) }
-        .getOrNull()
+    private val speechInput: CuedSpeechInput? = SharedVoice.speechInput(application)
         ?.let { CuedSpeechInput(it, ToneListeningCue()) }
 
     /** 저장된 설정. 불러오기 전에는 null. */
@@ -186,12 +176,12 @@ class WordChainViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     override fun onCleared() {
-        speech.release()
+        // 공유 음성 장치는 해제하지 않고 멈추기만 한다
+        speech.stop()
         speechInput?.release()
     }
 
     private companion object {
-        const val TAG = "WordChainViewModel"
         const val LISTEN_DELAY_MS = 400L
     }
 }

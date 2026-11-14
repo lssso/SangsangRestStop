@@ -1,14 +1,11 @@
 package com.sangsangreststop.app.feature.revealwho
 
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.sangsangreststop.app.core.audio.ToneListeningCue
-import com.sangsangreststop.app.core.voice.AndroidTtsSpeechOutput
 import com.sangsangreststop.app.core.voice.CuedSpeechInput
-import com.sangsangreststop.app.core.voice.PleosSpeechInput
-import com.sangsangreststop.app.core.voice.PleosSpeechOutput
+import com.sangsangreststop.app.core.voice.SharedVoice
 import com.sangsangreststop.app.core.voice.SpeechInput
 import com.sangsangreststop.app.core.voice.SpeechInputError
 import com.sangsangreststop.app.core.voice.SpeechOutput
@@ -166,23 +163,16 @@ class RevealWhoViewModel(application: Application) : AndroidViewModel(applicatio
         listening.value = false
     }
 
+    /** 음성 장치는 단어 짝짝꿍과 공유한다 (Pleos 서비스가 앱마다 콜백을 하나만 유지하기 때문). */
     private fun openVoice() {
         val app = getApplication<Application>()
-        // Pleos 음성 합성을 우선 쓰고, 쓸 수 없으면 Android 기본 TTS로 넘어간다
-        speech = runCatching<SpeechOutput> {
-            PleosSpeechOutput(app) { AndroidTtsSpeechOutput(app) }
-        }.getOrElse {
-            Log.w(TAG, "Pleos TTS unavailable", it)
-            AndroidTtsSpeechOutput(app)
-        }
-        speechInput = runCatching { PleosSpeechInput(app) }
-            .onFailure { Log.w(TAG, "Pleos STT unavailable", it) }
-            .getOrNull()
-            ?.let { CuedSpeechInput(it, ToneListeningCue()) }
+        speech = SharedVoice.speechOutput(app)
+        speechInput = SharedVoice.speechInput(app)?.let { CuedSpeechInput(it, ToneListeningCue()) }
     }
 
+    /** 공유 음성 장치는 해제하지 않고 멈추기만 한다. 안내음 장치만 해제한다. */
     private fun closeVoice() {
-        speech?.release()
+        speech?.stop()
         speech = null
         speechInput?.release()
         speechInput = null
@@ -194,7 +184,6 @@ class RevealWhoViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private companion object {
-        const val TAG = "RevealWhoViewModel"
         const val LISTEN_DELAY_MS = 400L
     }
 }

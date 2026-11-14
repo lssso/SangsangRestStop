@@ -52,10 +52,10 @@ class CuedSpeechInput(
         }
     }
 
+    /** 안내음 장치만 해제한다. 음성 인식 장치는 [SharedVoice]가 앱 전체에서 공유하므로 해제하지 않는다. */
     fun release() {
         stop()
         cue?.release()
-        input.release()
     }
 
     /** 끝났거나 취소된 듣기의 늦은 콜백은 버린다. */
