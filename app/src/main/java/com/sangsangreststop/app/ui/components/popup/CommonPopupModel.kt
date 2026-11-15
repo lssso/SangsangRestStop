@@ -196,12 +196,6 @@ fun commonPopupModel(
                 supportingText = stringResource(R.string.common_popup_end_game_supporting),
                 tone = CommonPopupButtonTone.PINK,
             ),
-            CommonPopupButtonModel(
-                action = CommonPopupAction.VOICE_SETTINGS,
-                label = stringResource(R.string.common_popup_voice_settings),
-                supportingText = stringResource(R.string.common_popup_voice_settings_supporting),
-                tone = CommonPopupButtonTone.PURPLE,
-            ),
         ),
     )
 }

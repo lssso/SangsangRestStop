@@ -79,20 +79,20 @@ fun CommonPopupOverlay(
         ) {
             val compact = maxWidth < 1_150.dp || maxHeight < 760.dp
             val artwork = commonPopupArtwork(model)
-            val widthFraction = if (compact) 0.94f else 0.88f
-            val heightFraction = when (model.type) {
-                CommonPopupType.PHONE,
-                CommonPopupType.NAVIGATION,
-                CommonPopupType.ERROR,
-                -> if (compact) 0.96f else 0.93f
-
-                CommonPopupType.GAME_END,
-                CommonPopupType.GAME_PAUSE,
-                -> if (compact) 0.90f else 0.88f
+            val isStandard = model.type == CommonPopupType.PHONE ||
+                model.type == CommonPopupType.NAVIGATION ||
+                model.type == CommonPopupType.ERROR
+            val widthFraction = if (compact) 0.90f else 0.74f
+            val heightFraction = if (isStandard) {
+                if (compact) 0.86f else 0.82f
+            } else {
+                if (compact) 0.82f else 0.74f
             }
+            val maxPanelWidth = if (isStandard) 1_180.dp else 1_220.dp
             val panelWidth = minOf(
                 maxWidth * widthFraction,
                 maxHeight * heightFraction * artwork.cloudAspectRatio,
+                maxPanelWidth,
             )
             val panelHeight = panelWidth / artwork.cloudAspectRatio
 
@@ -122,46 +122,95 @@ private fun PopupPanel(
     val isStandard = model.type == CommonPopupType.PHONE ||
         model.type == CommonPopupType.NAVIGATION ||
         model.type == CommonPopupType.ERROR
-    val charactersWidthFraction = if (isStandard) 0.48f else 0.46f
-    val characterAspectRatio = when (model.type) {
-        CommonPopupType.PHONE,
-        CommonPopupType.NAVIGATION,
-        CommonPopupType.ERROR,
-        -> 1.5f
-
-        CommonPopupType.GAME_END,
-        CommonPopupType.GAME_PAUSE,
-        -> 4f / 3f
-    }
-    val contentTopFraction = if (isStandard) 0.35f else 0.47f
-    val actionBottomFraction = if (isStandard) 0.065f else 0.075f
-    val actionHeight = if (compact) 88.dp else 112.dp
+    val charactersWidthFraction = if (isStandard) 0.38f else 0.34f
+    val characterAspectRatio = if (isStandard) 1.5f else 4f / 3f
+    val characterTopOffset = if (isStandard) -0.03f else -0.055f
+    val contentTopFraction = if (isStandard) 0.32f else 0.40f
+    val contentWidthFraction = if (isStandard) 0.68f else 0.66f
+    val actionBottomFraction = if (isStandard) 0.080f else 0.090f
+    val actionHeight = if (compact) 104.dp else 130.dp
 
     Box(
         modifier = modifier.size(panelWidth, panelHeight),
     ) {
         Image(
+            painter = painterResource(artwork.cloudRes),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(panelWidth, panelHeight),
+            contentScale = ContentScale.Fit,
+        )
+
+        when (model.type) {
+            CommonPopupType.PHONE,
+            CommonPopupType.NAVIGATION,
+            CommonPopupType.ERROR,
+            -> {
+                Image(
+                    painter = painterResource(artwork.decorationRes),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .offset(
+                            x = panelWidth * 0.075f,
+                            y = panelHeight * 0.25f,
+                        )
+                        .size(panelWidth * 0.16f),
+                    contentScale = ContentScale.Fit,
+                )
+                Image(
+                    painter = painterResource(artwork.decorationRes),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(
+                            x = -(panelWidth * 0.055f),
+                            y = panelHeight * 0.28f,
+                        )
+                        .size(panelWidth * 0.10f),
+                    contentScale = ContentScale.Fit,
+                )
+            }
+
+            CommonPopupType.GAME_END -> {
+                Image(
+                    painter = painterResource(artwork.decorationRes),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(
+                            width = panelWidth * 0.94f,
+                            height = panelHeight * 0.94f,
+                        ),
+                    contentScale = ContentScale.Fit,
+                )
+            }
+
+            CommonPopupType.GAME_PAUSE -> {
+                Image(
+                    painter = painterResource(artwork.decorationRes),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .offset(
+                            x = panelWidth * 0.08f,
+                            y = -(panelHeight * 0.03f),
+                        )
+                        .size(panelWidth * 0.14f),
+                    contentScale = ContentScale.Fit,
+                )
+            }
+        }
+
+        Image(
             painter = painterResource(artwork.charactersRes),
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = -(panelHeight * 0.025f))
+                .offset(y = panelHeight * characterTopOffset)
                 .width(panelWidth * charactersWidthFraction)
                 .aspectRatio(characterAspectRatio),
-            contentScale = ContentScale.Fit,
-        )
-
-        Image(
-            painter = painterResource(artwork.cloudRes),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit,
-        )
-
-        Image(
-            painter = painterResource(artwork.decorationRes),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit,
         )
 
@@ -174,10 +223,10 @@ private fun PopupPanel(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .offset(
-                                x = panelWidth * 0.14f,
-                                y = panelHeight * 0.015f,
+                                x = panelWidth * 0.13f,
+                                y = panelHeight * 0.01f,
                             )
-                            .size(panelWidth * 0.13f),
+                            .size(panelWidth * 0.095f),
                         contentScale = ContentScale.Fit,
                     )
                 }
@@ -187,12 +236,12 @@ private fun PopupPanel(
                         painter = painterResource(decorationRes),
                         contentDescription = null,
                         modifier = Modifier
-                            .align(Alignment.BottomStart)
+                            .align(Alignment.CenterStart)
                             .offset(
-                                x = panelWidth * 0.15f,
-                                y = -(panelHeight * 0.14f),
+                                x = panelWidth * 0.11f,
+                                y = panelHeight * 0.14f,
                             )
-                            .size(panelWidth * 0.095f),
+                            .size(panelWidth * 0.075f),
                         contentScale = ContentScale.Fit,
                     )
                 }
@@ -207,16 +256,16 @@ private fun PopupPanel(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .offset(y = panelHeight * contentTopFraction)
-                .width(panelWidth * if (isStandard) 0.74f else 0.70f),
+                .width(panelWidth * contentWidthFraction),
         )
 
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .offset(y = -(panelHeight * actionBottomFraction))
-                .width(panelWidth * 0.88f)
+                .width(panelWidth * 0.86f)
                 .height(actionHeight),
-            horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             model.actions.forEach { button ->
@@ -245,10 +294,14 @@ private fun PopupTextContent(
     val isStandard = model.type == CommonPopupType.PHONE ||
         model.type == CommonPopupType.NAVIGATION ||
         model.type == CommonPopupType.ERROR
-    val titleSize = if (compact) 34.sp else 48.sp
-    val descriptionSize = if (compact) 20.sp else 28.sp
-    val supportingSize = if (compact) 17.sp else 22.sp
-    val reassuranceSize = if (compact) 16.sp else 20.sp
+    val titleSize = if (compact) 36.sp else 52.sp
+    val descriptionSize = if (isStandard) {
+        if (compact) 27.sp else 38.sp
+    } else {
+        if (compact) 25.sp else 36.sp
+    }
+    val supportingSize = if (compact) 22.sp else 30.sp
+    val reassuranceSize = if (compact) 20.sp else 26.sp
 
     Column(
         modifier = modifier,
@@ -279,7 +332,7 @@ private fun PopupTextContent(
 
         if (isStandard) {
             artwork.mainIconRes?.let { iconRes ->
-                Spacer(Modifier.height(if (compact) 4.dp else 8.dp))
+                Spacer(Modifier.height(if (compact) 6.dp else 10.dp))
                 Image(
                     painter = painterResource(iconRes),
                     contentDescription = null,
@@ -292,7 +345,15 @@ private fun PopupTextContent(
             }
         }
 
-        Spacer(Modifier.height(if (compact) 5.dp else 8.dp))
+        Spacer(
+            Modifier.height(
+                if (isStandard) {
+                    if (compact) 12.dp else 18.dp
+                } else {
+                    if (compact) 10.dp else 15.dp
+                },
+            ),
+        )
         Text(
             text = model.description,
             color = PopupNavy,
@@ -304,7 +365,7 @@ private fun PopupTextContent(
         )
 
         model.supportingText?.let { supporting ->
-            Spacer(Modifier.height(if (compact) 2.dp else 4.dp))
+            Spacer(Modifier.height(if (compact) 3.dp else 5.dp))
             Text(
                 text = supporting,
                 color = PopupBlue,
@@ -317,7 +378,7 @@ private fun PopupTextContent(
         }
 
         model.reassurance?.let { reassurance ->
-            Spacer(Modifier.height(if (compact) 5.dp else 8.dp))
+            Spacer(Modifier.height(if (compact) 6.dp else 9.dp))
             Text(
                 text = reassurance,
                 color = PopupNavy,
@@ -350,6 +411,17 @@ private fun PopupActionButton(
     modifier: Modifier = Modifier,
 ) {
     val artwork = commonPopupButtonArtwork(popupType, model)
+    val showSupportingText = popupType != CommonPopupType.GAME_END &&
+        popupType != CommonPopupType.GAME_PAUSE
+    val isStandardStop = model.action == CommonPopupAction.STOP &&
+        (popupType == CommonPopupType.PHONE ||
+            popupType == CommonPopupType.NAVIGATION ||
+            popupType == CommonPopupType.ERROR)
+    val iconSize = when {
+        isStandardStop -> if (compact) 56.dp else 76.dp
+        model.action == CommonPopupAction.STOP -> if (compact) 60.dp else 82.dp
+        else -> if (compact) 52.dp else 70.dp
+    }
     val contentColor = when (model.tone) {
         CommonPopupButtonTone.MINT -> PopupMint
         CommonPopupButtonTone.BLUE -> PopupBlue
@@ -375,20 +447,36 @@ private fun PopupActionButton(
         )
 
         Row(
-            modifier = Modifier.padding(
-                horizontal = if (compact) 12.dp else 18.dp,
-                vertical = if (compact) 8.dp else 12.dp,
-            ),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    horizontal = if (compact) 8.dp else 14.dp,
+                    vertical = if (compact) 7.dp else 10.dp,
+                ),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Image(
-                painter = painterResource(artwork.iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(if (compact) 42.dp else 56.dp),
-                contentScale = ContentScale.Fit,
-            )
-            Spacer(Modifier.width(if (compact) 8.dp else 12.dp))
+            if (isStandardStop) {
+                Box(
+                    modifier = Modifier.size(if (compact) 52.dp else 70.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(
+                        painter = painterResource(artwork.iconRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(iconSize),
+                        contentScale = ContentScale.Fit,
+                    )
+                }
+            } else {
+                Image(
+                    painter = painterResource(artwork.iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(iconSize),
+                    contentScale = ContentScale.Fit,
+                )
+            }
+            Spacer(Modifier.width(if (compact) 8.dp else 11.dp))
             Column(
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Center,
@@ -396,20 +484,22 @@ private fun PopupActionButton(
                 Text(
                     text = model.label,
                     color = contentColor,
-                    fontSize = if (compact) 18.sp else 24.sp,
-                    lineHeight = if (compact) 21.sp else 28.sp,
+                    fontSize = if (compact) 24.sp else 34.sp,
+                    lineHeight = if (compact) 28.sp else 39.sp,
                     fontWeight = FontWeight.ExtraBold,
                     maxLines = 1,
                 )
-                model.supportingText?.let { supporting ->
-                    Text(
-                        text = supporting,
-                        color = PopupNavy.copy(alpha = 0.72f),
-                        fontSize = if (compact) 11.sp else 14.sp,
-                        lineHeight = if (compact) 13.sp else 17.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                    )
+                if (showSupportingText) {
+                    model.supportingText?.let { supporting ->
+                        Text(
+                            text = supporting,
+                            color = PopupNavy.copy(alpha = 0.72f),
+                            fontSize = if (compact) 15.sp else 22.sp,
+                            lineHeight = if (compact) 18.sp else 25.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                        )
+                    }
                 }
             }
         }

@@ -21,7 +21,10 @@ app/src/main/java/com/sangsangreststop/app/
   MainActivity.kt
   SangsangRestStopApp.kt
   core/
+    audio/ListeningCue.kt
     settings/WordChainSettingsRepository.kt
+    voice/CuedSpeechInput.kt
+    voice/SharedVoice.kt
     voice/SpeechInput.kt
     voice/SpeechOutput.kt
     voice/PleosSpeechOutput.kt
@@ -29,10 +32,12 @@ app/src/main/java/com/sangsangreststop/app/
     dashboard/DashboardScreen.kt
     revealwho/RevealWhoSetupScreen.kt
     revealwho/RevealWhoPlayScreen.kt
+    revealwho/RevealWhoViewModel.kt
     voicepoc/VoicePocController.kt
     voicepoc/VoicePocScreen.kt
     wordchain/
   game/
+    revealwho/
     wordchain/
   ui/
     components/
@@ -40,7 +45,7 @@ app/src/main/java/com/sangsangreststop/app/
     theme/
 ```
 
-현재 `feature/revealwho`에는 설정·진행 UI가 존재한다. 진행 화면은 정적 미리보기 상태이며 게임 엔진과 음성 입출력에는 연결되지 않았다. `feature/soundquiz`, `game/revealwho`, `game/soundquiz` 패키지는 존재하지 않는다.
+현재 `feature/revealwho`에는 설정·진행 UI와 `RevealWhoViewModel`이 존재하며 `game/revealwho`의 상태 엔진·문제 데이터·정답 판정을 화면 및 음성 입출력과 연결한다. `feature/soundquiz`, `game/soundquiz` 패키지는 존재하지 않는다.
 
 ## 3. 계층과 책임
 
@@ -49,7 +54,7 @@ app/src/main/java/com/sangsangreststop/app/
 현재 구현:
 
 - `feature/dashboard`: 브랜드, 게임 선택, 준비중 처리, 목소리 이름 표시
-- `feature/revealwho`: 짜잔! 누구? 설정·진행 화면, 난이도·주제 선택과 UI 이벤트 콜백
+- `feature/revealwho`: 짜잔! 누구? 설정·진행 화면, 난이도·주제 선택, ViewModel 기반 게임·음성 상태 연결
 - `feature/wordchain`: 단어 짝짝꿍 설정·진행 화면
 - `feature/voicepoc`: 음성 기능 진단 화면
 - `ui/components/popup`: 공통 팝업
@@ -57,7 +62,7 @@ app/src/main/java/com/sangsangreststop/app/
 
 계획:
 
-- `feature/revealwho`: 짜잔! 누구? 진행 화면과 게임 엔진·문제 데이터·음성 상태 연결
+- `feature/revealwho`: 종료 축하 화면과 오류 공통 팝업 연결, 실제 Pleos 음성 흐름 검증
 - `feature/soundquiz`: 쫑긋 퀴즈 설정·진행 화면
 - 공통 온보딩과 목소리 선택 화면
 
@@ -68,10 +73,10 @@ Compose는 상태를 표시하고 사용자 이벤트를 전달한다. 게임 �
 현재 구현:
 
 - `game/wordchain`: WordChain 엔진, 한글·두음법칙·사전·힌트·음성 명령 규칙
+- `game/revealwho`: 단계형 힌트, 로컬 문제 선택, 정답·동의어 판정, 오답·무응답·일시정지·종료 상태
 
 계획:
 
-- `game/revealwho`: 힌트 단계와 정답 판정
 - `game/soundquiz`: 문제 선택, 정답 판정과 진행 상태
 
 신규 엔진은 가능한 한 순수 Kotlin 상태 → 액션 → 새 상태 + 효과 구조로 구현한다.
@@ -85,6 +90,8 @@ Compose는 상태를 표시하고 사용자 이벤트를 전달한다. 게임 �
 - `SpeechOutput`: 음성 출력 경계
 - `PleosSpeechOutput`: Pleos TTS 어댑터와 fallback 연결
 - `AndroidTtsSpeechOutput`: 일반 Android TTS 대체 구현
+- `SharedVoice`: 게임 간 Pleos 음성 장치 공유
+- `CuedSpeechInput`과 `ToneListeningCue`: TTS 종료 후 코드 합성 안내음을 재생하고 실제 STT 시작 시점을 알림
 
 계획:
 
@@ -121,7 +128,7 @@ Compose는 상태를 표시하고 사용자 이벤트를 전달한다. 게임 �
 - WordChainPlay
 - VoicePoc
 
-단어 짝짝꿍과 짜잔! 누구? 카드는 각 설정 화면으로 이동한다. 짜잔! 누구? 설정 화면의 시작 버튼은 선택한 난이도·주제를 메모리 상태로 보관하고 진행 화면으로 이동한다. 진행 화면의 다시 듣기·다음 힌트는 엔진 미연결 안내를 표시하고, 그만하기는 기존 공통 일시정지·종료 팝업을 연다. 쫑긋 퀴즈 카드는 준비중 팝업을 표시한다. 공통 Navigation 라이브러리 기반 그래프는 현재 사용하지 않는다.
+단어 짝짝꿍과 짜잔! 누구? 카드는 각 설정 화면으로 이동한다. 짜잔! 누구? 설정 화면의 시작 버튼은 선택한 난이도·주제를 메모리 상태로 보관하고 진행 화면으로 이동하며, ViewModel이 선택값으로 문제를 만들고 힌트·정답·음성 상태를 진행 화면에 전달한다. 그만하기 공통 일시정지 팝업은 게임을 일시정지하고, 재개 또는 대시보드 종료 동작을 연결한다. 쫑긋 퀴즈 카드는 준비중 팝업을 표시한다. 공통 Navigation 라이브러리 기반 그래프는 현재 사용하지 않는다.
 
 ## 5. 단어 짝짝꿍 구조
 
@@ -140,14 +147,15 @@ Compose는 상태를 표시하고 사용자 이벤트를 전달한다. 게임 �
 
 ### 짜잔! 누구?
 
-설정·진행 UI와 화면 이동은 구현됐다. 진행 화면의 문제 번호·힌트 단계·힌트 문구는 정적 미리보기 값이며, 설정값은 메모리에서 전달될 뿐 문제 생성에 사용되지 않는다. 다음 게임 구조는 아직 계획이며 구현 전 세부 데이터 정책을 확정한다.
+설정·진행 UI와 화면 이동, 다음 게임 구조가 구현됐다.
 
-- RevealWhoQuestion: 정답, 카테고리, 힌트 목록, 동의어
-- RevealWhoState / RevealWhoAction / RevealWhoEffect
-- RevealWhoViewModel과 현재 Compose 화면의 상태 연결
-- 로컬 문제 데이터와 순수 Kotlin 테스트
+- `RevealWhoQuestion`, `RevealWhoQuestionBank`: 정답, 주제, 난이도, 힌트 목록, 동의어를 포함한 로컬 데이터
+- `RevealWhoState` / `RevealWhoAction` / `RevealWhoEffect`: 힌트·정답·무응답·일시정지·종료 상태 전이
+- `RevealWhoAnswerJudge`: 정답과 허용 동의어 판정
+- `RevealWhoViewModel`: Compose 화면 상태와 TTS → 안내음 → STT 효과 연결
+- 순수 Kotlin 엔진 단위 테스트
 
-사용자 질문형 엔진을 재사용하지 않고 단계형 힌트 게임으로 독립 구현한다.
+한 판 5문제, 문제당 4개 힌트 등의 값은 개발 기본값으로 구현됐으며 기획 검수가 필요하다. 사용자 질문형 엔진을 재사용하지 않고 앱이 힌트를 말하고 사용자가 답하는 단계형 힌트 게임으로 독립 구현했다.
 
 ### 쫑긋 퀴즈
 
@@ -265,15 +273,26 @@ Pleos 기능은 공식 확인과 환경 검증 전 완료로 표시하지 않는
 현재 단위 테스트 경로:
 
 - `core/settings/WordChainSettingsRepositoryTest.kt`
+- `core/voice/CuedSpeechInputTest.kt`
+- `game/revealwho/RevealWhoGameTest.kt`
+- `game/wordchain/SpokenNumbersTest.kt`
 - `game/wordchain/VoiceCommandClassifierTest.kt`
 - `game/wordchain/WordChainGameTest.kt`
 - `game/wordchain/WordChainRulesTest.kt`
 - 기본 `ExampleUnitTest.kt`
 
+2026-11-15 제출 직전 검증:
+
+- `:app:assembleDebug` 성공
+- 단위 테스트 76개 통과, 실패·건너뜀 없음
+- 공통 팝업 6종 Compose Preview 렌더링 확인
+- 제출 Release APK 패키지명·release 메타데이터·v2 서명 확인
+- 실행 중인 테스트 기기가 없어 현재 Release APK 설치·실행은 미검증
+
 2026-11-13 기준선:
 
 - Debug clean build 성공
-- 단위 테스트 47개 통과
+- 당시 단위 테스트 47개 통과
 - Git 포함 후보 194개만으로 만든 깨끗한 사본 build·test 성공
 - 주요 Compose Preview 렌더링 확인
 - Pleos 에뮬레이터에서 대시보드와 단어 짝짝꿍 설정·진행 화면 확인

@@ -3,7 +3,7 @@
 차 안에서 잠깐 쉬어 가듯, 듣고 말하며 즐기는 어린이·가족용 음성 놀이 앱입니다.
 
 > 대상: Hyundai Pleos Connect Android 앱 공모전
-> 현재 상태: 단어 짝짝꿍은 실행 가능하고, 짜잔! 누구?는 설정·진행 화면 퍼블리싱과 화면 이동까지 구현됐으며, 쫑긋 퀴즈는 준비중입니다.
+> 현재 상태: 단어 짝짝꿍과 짜잔! 누구?는 게임 엔진·화면·STT/TTS 연결 코드가 구현됐으며, 쫑긋 퀴즈는 준비중입니다.
 
 상상휴게소는 별도 Git 이력과 원격 저장소를 사용하는 독립 프로젝트입니다. 분리 원본 프로젝트의 코드와 리소스는 이 저장소에서 변경하지 않습니다.
 
@@ -28,11 +28,13 @@
 - `applicationId`, Android namespace, Kotlin 패키지: `com.sangsangreststop.app`
 - Jetpack Compose 대시보드와 MVP 게임 카드 3종
 - 상상휴게소 로고, 캐릭터 포함 배경, 카드 배경·아트워크의 `sr_` 앱 리소스
-- 단어 짝짝꿍 설정·진행 화면
+- 단어 짝짝꿍 설정·진행 화면과 순수 Kotlin WordChain 엔진·단위 테스트
+- 단어 짝짝꿍 난이도·힌트 설정 DataStore 저장
 - 짜잔! 누구? 설정·진행 화면, 난이도·주제 선택과 대시보드 → 설정 → 진행 화면 이동
-- 순수 Kotlin WordChain 엔진과 단위 테스트
-- 난이도·힌트 설정 DataStore 저장
+- 짜잔! 누구? 로컬 문제·단계형 힌트 데이터, 순수 Kotlin 게임 엔진, 정답 판정과 단위 테스트
+- 짜잔! 누구? 진행 UI의 실제 게임 상태 연결 및 SpeechInput / SpeechOutput 연동
 - Pleos SpeechToText / TextToSpeech SDK 어댑터 코드
+- 두 게임의 TTS 종료 → 코드 합성 마이크 안내음 → STT 시작 흐름
 - Pleos TTS 실패 시 Android TTS 대체 구현과 STT 불가 시 직접 입력 경로
 - 공통 팝업 UI와 Compose Preview
 - 음성 기능 진단 화면
@@ -41,10 +43,11 @@
 
 ### 부분 구현 또는 별도 검증 필요
 
-- Pleos 에뮬레이터에서 앱 설치·대시보드·단어 짝짝꿍 설정·진행 화면 실행 확인
-- 음성 상태의 말하기 → 듣기 전환 확인
-- Pleos STT 실제 인식 정확도와 무응답 원인
+- 과거 Pleos 에뮬레이터에서 앱 설치·대시보드·단어 짝짝꿍 설정·진행 화면 실행 및 말하기 → 듣기 상태 전환 확인
+- 현재 Release APK의 Pleos/Android 14 설치·실행과 기존 설치 앱 서명 호환성 재검증
+- 단어 짝짝꿍·짜잔! 누구?의 Pleos STT 실제 인식 정확도, 무응답 원인, 안내음 음량·출력 채널·오인식 여부
 - TTS 실제 출력 품질
+- 짜잔! 누구?의 문제 수·힌트 단계·난이도·종료 조건 기획 검수
 - 공통 팝업의 전체 런타임 게임 흐름 연결
 - 목소리 선택·저장 화면: 명칭만 확정됐으며 기능은 미구현
 - 전화·내비·시동·오디오 포커스 차량 이벤트
@@ -52,7 +55,6 @@
 
 ### 미구현
 
-- 짜잔! 누구? 게임 엔진, 문제·힌트 데이터, 힌트 진행, 정답 판정과 STT/TTS 연결
 - 쫑긋 퀴즈 엔진·화면·문제 데이터·라이선스가 확인된 음원
 - 게임별 음성 온보딩과 완료 상태 저장
 - 쫑긋 퀴즈 설정·진행 화면 전용 이미지
@@ -71,7 +73,15 @@
 
 ## 최근 기준선 검증
 
-2026-11-13 기준 작업 기록과 현재 파일을 대조했습니다.
+2026-11-15 제출 직전 현재 저장소를 다시 검증했습니다.
+
+- `:app:assembleDebug` 성공
+- `:app:testDebugUnitTest` 76개 통과, 실패·건너뜀 없음
+- 공통 팝업 6종 Compose Preview 렌더링 확인
+- 서명된 Release APK의 패키지명과 v2 서명 확인
+- 이번 검증 세션에는 실행 중인 기기가 없어 현재 APK 설치·실행은 미검증
+
+2026-11-13 기준선 작업 기록:
 
 - 미사용 레거시 실행 리소스 79개를 전수 조사 후 삭제
 - 삭제 전 프로젝트 외부 백업 및 SHA-256 79/79 일치 확인
@@ -111,12 +121,22 @@ Clean build가 필요하면 다음을 실행합니다.
 .\gradlew.bat :app:clean :app:assembleDebug
 ```
 
+공모전 제출용 서명 APK:
+
+```text
+apk/한지붕 상상연구소_상상휴게소_release.apk
+```
+
+APK의 패키지명은 `com.sangsangreststop.app`이며, 제출 전 `apksigner verify --verbose --print-certs`로 서명을 확인합니다. 키스토어와 비밀번호는 저장소에 포함하지 않습니다.
+
 ## 실행
 
 1. Android Studio에서 저장소 루트를 엽니다.
 2. Gradle Sync를 수행합니다.
 3. 일반 Android 에뮬레이터 또는 공식 Pleos 테스트 환경을 선택합니다.
 4. `app` 실행 구성을 실행합니다.
+
+제출 APK를 직접 검증할 때는 기존 설치 앱과의 서명 충돌 여부를 먼저 확인한 뒤 설치합니다. 서명 충돌이 발생하면 기존 앱을 임의로 삭제하지 않습니다.
 
 일반 Android, Pleos 에뮬레이터, 실제 차량의 검증 결과를 혼용하지 않습니다. 실제 차량 검증은 아직 완료되지 않았습니다.
 
@@ -125,12 +145,14 @@ Clean build가 필요하면 다음을 실행합니다.
 ```text
 app/
   src/main/java/com/sangsangreststop/app/
+    core/audio/
     core/settings/
     core/voice/
     feature/dashboard/
     feature/revealwho/
     feature/voicepoc/
     feature/wordchain/
+    game/revealwho/
     game/wordchain/
     ui/components/
     ui/theme/

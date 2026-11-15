@@ -20,6 +20,11 @@ local.properties
 *.aab
 *.apks
 *.idsig
+/app/release/
+/releases/
+
+# Competition submission artifact (signed release only)
+!/apk/한지붕 상상연구소_상상휴게소_release.apk
 
 # Android Studio machine-local state
 /.idea/deploymentTargetSelector.xml
