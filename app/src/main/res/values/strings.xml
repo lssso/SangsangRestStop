@@ -70,6 +70,8 @@
     <string name="reveal_who_play_speaking_prompt">힌트를 잘 들어보세요!</string>
     <string name="reveal_who_play_mic_prompt">마이크를 누르고 말해보세요!</string>
     <string name="reveal_who_play_finished_prompt">다음에 또 놀아요!</string>
+    <string name="reveal_who_input_title">정답을 입력해 주세요</string>
+    <string name="reveal_who_input_placeholder">예: 기린</string>
     <string name="reveal_who_play_replay">다시 듣기</string>
     <string name="reveal_who_play_next_hint">다음 힌트</string>
     <string name="reveal_who_play_stop">그만하기</string>

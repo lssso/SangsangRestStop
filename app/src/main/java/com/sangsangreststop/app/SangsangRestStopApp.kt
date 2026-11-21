@@ -36,7 +36,9 @@ import com.sangsangreststop.app.feature.wordchain.WordChainTextInputDialog
 import com.sangsangreststop.app.feature.wordchain.WordChainViewModel
 import com.sangsangreststop.app.feature.wordchain.toUiSettings
 import com.sangsangreststop.app.ui.components.SangsangRestStopPopupOverlay
+import com.sangsangreststop.app.game.revealwho.RevealWhoError
 import com.sangsangreststop.app.ui.components.popup.CommonPopupAction
+import com.sangsangreststop.app.ui.components.popup.CommonPopupErrorType
 import com.sangsangreststop.app.ui.components.popup.CommonPopupOverlay
 import com.sangsangreststop.app.ui.components.popup.CommonPopupType
 import com.sangsangreststop.app.ui.components.popup.commonPopupModel
@@ -84,6 +86,7 @@ fun SangsangRestStopApp(modifier: Modifier = Modifier) {
     var showRevealWhoStopPopup by rememberSaveable {
         mutableStateOf(value = false)
     }
+    var showRevealWhoInput by remember { mutableStateOf(false) }
     var wordChainSettings by remember { mutableStateOf<WordChainSettings?>(null) }
     var showWordInput by remember { mutableStateOf(false) }
     val wordChainViewModel: WordChainViewModel = viewModel()
@@ -95,6 +98,7 @@ fun SangsangRestStopApp(modifier: Modifier = Modifier) {
     }
     val leaveRevealWho: (AppDestination) -> Unit = { target ->
         showRevealWhoStopPopup = false
+        showRevealWhoInput = false
         revealWhoViewModel.endGame()
         destination = target
     }
@@ -177,8 +181,57 @@ fun SangsangRestStopApp(modifier: Modifier = Modifier) {
                             revealWhoViewModel.onUserPause(true)
                         },
                         uiState = playUiState,
-                        onMicClick = revealWhoViewModel::onMicClick,
+                        // 음성 인식을 쓸 수 없는 환경이면 마이크가 글자 입력 창을 연다
+                        onMicClick = {
+                            if (revealWhoViewModel.isVoiceInputAvailable) {
+                                revealWhoViewModel.onMicClick()
+                            } else {
+                                revealWhoViewModel.onTextInputOpened()
+                                showRevealWhoInput = true
+                            }
+                        },
                     )
+                    if (showRevealWhoInput) {
+                        WordChainTextInputDialog(
+                            onSubmit = { text ->
+                                showRevealWhoInput = false
+                                revealWhoViewModel.onTextEntered(text)
+                            },
+                            onDismiss = { showRevealWhoInput = false },
+                            title = stringResource(R.string.reveal_who_input_title),
+                            placeholder = stringResource(R.string.reveal_who_input_placeholder),
+                        )
+                    }
+                    // 오류는 공통 오류 팝업으로 알린다 (기존 팝업 디자인 그대로)
+                    playUiState.error?.let { error ->
+                        CommonPopupOverlay(
+                            model = commonPopupModel(
+                                CommonPopupType.ERROR,
+                                when (error) {
+                                    RevealWhoError.SPEECH_RECOGNITION -> CommonPopupErrorType.SPEECH_RECOGNITION
+                                    RevealWhoError.NETWORK -> CommonPopupErrorType.NETWORK
+                                },
+                            ),
+                            onAction = { action ->
+                                when (action) {
+                                    CommonPopupAction.RETRY -> revealWhoViewModel.onRetry()
+                                    else -> leaveRevealWho(AppDestination.Dashboard)
+                                }
+                            },
+                        )
+                    }
+                    // 마지막 인사가 끝나면 게임 종료 팝업으로 결과 다음 행동을 고른다
+                    if (playUiState.showEndPopup && !showRevealWhoStopPopup) {
+                        CommonPopupOverlay(
+                            model = commonPopupModel(CommonPopupType.GAME_END),
+                            onAction = { action ->
+                                when (action) {
+                                    CommonPopupAction.REPLAY -> revealWhoViewModel.restartGame()
+                                    else -> leaveRevealWho(AppDestination.Dashboard)
+                                }
+                            },
+                        )
+                    }
                 }
 
                 AppDestination.WordChainSetup -> {

@@ -11,6 +11,7 @@ import com.sangsangreststop.app.core.voice.SpeechInputError
 import com.sangsangreststop.app.core.voice.SpeechOutput
 import com.sangsangreststop.app.game.revealwho.RevealWhoAction
 import com.sangsangreststop.app.game.revealwho.RevealWhoEffect
+import com.sangsangreststop.app.game.revealwho.RevealWhoError
 import com.sangsangreststop.app.game.revealwho.RevealWhoGame
 import com.sangsangreststop.app.game.revealwho.RevealWhoGameSettings
 import com.sangsangreststop.app.game.revealwho.RevealWhoLevel
@@ -38,13 +39,19 @@ data class RevealWhoPlayUiState(
     val voiceState: RevealWhoVoiceState = RevealWhoVoiceState.LISTENING,
     val isFinished: Boolean = false,
     val isPaused: Boolean = false,
+    /** 마지막 인사가 끝나 결과(게임 종료) 팝업을 띄울 때 */
+    val showEndPopup: Boolean = false,
+    /** 오류 팝업으로 알릴 문제. 없으면 null. */
+    val error: RevealWhoError? = null,
+    /** 음성 인식을 쓸 수 없어 마이크 버튼이 글자 입력 창을 여는 상태 */
+    val textInputOnly: Boolean = false,
 )
 
 /**
  * 「짜잔! 누구?」 진행 화면과 게임 엔진을 잇는 ViewModel.
  * 엔진이 내보낸 effect(말하기·듣기)를 실제로 실행하고, 엔진 상태를 화면 상태로 바꾼다.
  *
- * 음성 장치는 게임을 시작할 때 만들고 끝낼 때 해제해서, 다른 게임의 음성 세션과 겹치지 않게 한다.
+ * 음성 장치는 단어 짝짝꿍과 공유하며([SharedVoice]), 게임을 끝내거나 화면을 떠나면 말하기·듣기를 멈춘다.
  */
 class RevealWhoViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -62,12 +69,31 @@ class RevealWhoViewModel(application: Application) : AndroidViewModel(applicatio
             state?.toPlayUiState(isSpeaking, isListening) ?: EmptyPlayUiState
         }.stateIn(viewModelScope, SharingStarted.Eagerly, EmptyPlayUiState)
 
+    private var lastSettings: RevealWhoSettings? = null
+
     fun startGame(settings: RevealWhoSettings) {
         endGame()
+        lastSettings = settings
         openVoice()
         gameState.value = game.newGame(settings.toGameSettings())
         dispatch(RevealWhoAction.Start)
     }
+
+    /** 결과 팝업의 '다시 놀기': 같은 설정으로 새 문제를 뽑아 처음부터 한다. */
+    fun restartGame() {
+        lastSettings?.let(::startGame)
+    }
+
+    /** 음성 인식을 쓸 수 없으면 마이크 버튼이 글자 입력 창을 연다. */
+    val isVoiceInputAvailable: Boolean
+        get() = speechInput?.isAvailable == true && gameState.value?.voiceUnavailable != true
+
+    fun onTextInputOpened() = stopListening()
+
+    fun onTextEntered(text: String) = dispatch(RevealWhoAction.TextEntered(text))
+
+    /** 오류 팝업의 '다시 시도' */
+    fun onRetry() = dispatch(RevealWhoAction.Retry)
 
     /** 화면을 떠날 때 진행 중인 게임 세션을 끝내고 음성 장치를 해제한다. */
     fun endGame() {
@@ -145,8 +171,8 @@ class RevealWhoViewModel(application: Application) : AndroidViewModel(applicatio
                     listening.value = false
                     when (error) {
                         SpeechInputError.UNAVAILABLE -> dispatch(RevealWhoAction.VoiceUnavailable)
-                        SpeechInputError.RECOGNITION, SpeechInputError.NETWORK ->
-                            dispatch(RevealWhoAction.RecognitionFailed(turnId))
+                        SpeechInputError.RECOGNITION -> dispatch(RevealWhoAction.RecognitionFailed(turnId))
+                        SpeechInputError.NETWORK -> dispatch(RevealWhoAction.NetworkFailed(turnId))
                     }
                 }
             }) {
@@ -224,6 +250,10 @@ internal fun RevealWhoState.toPlayUiState(isSpeaking: Boolean, isListening: Bool
         },
         isFinished = finished,
         isPaused = isPaused && !finished,
+        // 마지막 인사를 다 들려준 뒤에 결과 팝업을 띄운다
+        showEndPopup = finished && !isSpeaking,
+        error = error.takeIf { !finished },
+        textInputOnly = voiceUnavailable,
     )
 }
 
