@@ -73,14 +73,15 @@ class RevealWhoGameTest {
     @Test
     fun `wrong at the last hint allows one more try then reveals the answer`() {
         var state = answering()
-        repeat(3) { state = listen(say(state, "코끼리").state) }
+        // 같은 오답을 반복하면 힌트를 쓰지 않으므로 매번 다른 오답을 말한다
+        for (wrong in listOf("코끼리", "사자", "하마")) state = listen(say(state, wrong).state)
         assertTrue(state.isLastHint)
 
-        val retry = say(state, "코끼리")
+        val retry = say(state, "호랑이")
         assertEquals(0, retry.state.questionIndex)
         assertTrue(retry.effects.spoken().contains("한 번만 더"))
 
-        val revealed = say(listen(retry.state), "코끼리")
+        val revealed = say(listen(retry.state), "판다")
         assertEquals(1, revealed.state.questionIndex)
         assertEquals(0, revealed.state.score)
         assertTrue(revealed.effects.spoken().contains("정답은 '기린'이었어"))
@@ -156,24 +157,26 @@ class RevealWhoGameTest {
     }
 
     @Test
-    fun `recognition failures are not wrong answers and end in waiting for the mic`() {
+    fun `recognition failures are not wrong answers and end in the speech error popup`() {
         var state = answering()
         repeat(2) {
             val t = reduce(state, RevealWhoAction.RecognitionFailed(state.turnId))
             assertEquals(0, t.state.hintIndex)
+            assertEquals(null, t.state.error)
             state = listen(t.state)
         }
         val third = reduce(state, RevealWhoAction.RecognitionFailed(state.turnId))
 
-        assertTrue(third.state.waitingForMic)
+        assertEquals(RevealWhoError.SPEECH_RECOGNITION, third.state.error)
         assertEquals(0, third.state.hintIndex)
+        assertEquals(listOf(RevealWhoEffect.StopListening, RevealWhoEffect.StopSpeaking), third.effects)
     }
 
     @Test
     fun `voice unavailable is announced once and keeps waiting for buttons`() {
         val state = answering()
         val t = reduce(state, RevealWhoAction.VoiceUnavailable)
-        assertTrue(t.effects.spoken().contains("다음 힌트 버튼"))
+        assertTrue(t.effects.spoken().contains("글자로 정답"))
 
         val next = reduce(listen(t.state), RevealWhoAction.NextHintButton)
         assertTrue(next.state.waitingForMic)
@@ -241,6 +244,172 @@ class RevealWhoGameTest {
         assertEquals(RevealWhoUtterance.REVEAL, RevealWhoAnswerJudge.classify("정답 알려 줘", giraffe))
         assertEquals(RevealWhoUtterance.WRONG, RevealWhoAnswerJudge.classify("얼룩말", giraffe))
         assertEquals(RevealWhoUtterance.UNCLEAR, RevealWhoAnswerJudge.classify("엄마 우리 언제 도착해 배고파", giraffe))
+    }
+
+    // ---- 완성 작업에서 추가한 테스트 ----
+
+    @Test
+    fun `questions are picked by the chosen topic and level`() {
+        for (topic in RevealWhoTopic.entries) for (level in RevealWhoLevel.entries) {
+            val state = RevealWhoGame().newGame(RevealWhoGameSettings(level, topic))
+            assertEquals(5, state.questions.size)
+            assertTrue("$topic/$level", state.questions.all { it.topic == topic && it.level == level })
+        }
+    }
+
+    @Test
+    fun `hints are given in order and the answer is revealed when they run out`() {
+        var state = answering()
+        val heard = mutableListOf(state.currentHint)
+        repeat(3) {
+            state = listen(reduce(state, RevealWhoAction.NextHintButton).state)
+            heard += state.currentHint
+        }
+        assertEquals(giraffe.hints, heard)
+
+        val revealed = reduce(state, RevealWhoAction.NextHintButton)
+        assertEquals(1, revealed.state.questionIndex)
+        assertTrue(revealed.effects.spoken().contains("정답은 '기린'이었어"))
+    }
+
+    @Test
+    fun `restart from the end starts a fresh game`() {
+        val finished = reduce(answering(), RevealWhoAction.Stop).state
+        val restarted = reduce(game.newGame(finished.settings), RevealWhoAction.Start)
+
+        assertEquals(RevealWhoPhase.HINT, restarted.state.phase)
+        assertEquals(0, restarted.state.questionIndex)
+        assertEquals(0, restarted.state.score)
+        assertTrue(restarted.effects.spoken().contains("첫 번째 문제"))
+    }
+
+    @Test
+    fun `the same STT result delivered twice is judged only once`() {
+        val state = answering()
+        val first = reduce(state, RevealWhoAction.ChildSpoke("기린", state.turnId))
+        val duplicate = reduce(first.state, RevealWhoAction.ChildSpoke("기린", state.turnId))
+
+        assertEquals(1, first.state.score)
+        assertEquals(first.state, duplicate.state)
+        assertTrue(duplicate.effects.isEmpty())
+    }
+
+    @Test
+    fun `a late answer from the previous question does not score the next one`() {
+        val state = answering()
+        val moved = reduce(state, RevealWhoAction.NextHintButton).let { t ->
+            // 마지막 힌트까지 넘겨서 정답을 공개하고 다음 문제로 간다
+            var s = t.state
+            repeat(3) { s = reduce(s, RevealWhoAction.NextHintButton).state }
+            s
+        }
+        assertEquals(1, moved.questionIndex)
+
+        val late = reduce(listen(moved), RevealWhoAction.ChildSpoke("멍멍이", state.turnId))
+        assertEquals(0, late.state.score)
+        assertTrue(late.effects.isEmpty())
+    }
+
+    @Test
+    fun `callbacks after the game ended are ignored`() {
+        val ended = reduce(answering(), RevealWhoAction.Stop).state
+        val actions = listOf(
+            RevealWhoAction.ChildSpoke("기린", ended.turnId),
+            RevealWhoAction.NoInput(ended.turnId),
+            RevealWhoAction.RecognitionFailed(ended.turnId),
+            RevealWhoAction.NetworkFailed(ended.turnId),
+            RevealWhoAction.SpeechFinished(ended.turnId),
+            RevealWhoAction.TextEntered("기린"),
+            RevealWhoAction.MicButton,
+            RevealWhoAction.NextHintButton,
+        )
+        actions.forEach { action ->
+            val t = reduce(ended, action)
+            assertEquals(action.toString(), ended, t.state)
+            assertTrue(action.toString(), t.effects.isEmpty())
+        }
+    }
+
+    @Test
+    fun `pause blocks progress until every reason is released`() {
+        val paused = reduce(answering(), RevealWhoAction.Pause(RevealWhoPauseReason.USER)).state
+        // 일시정지 중에는 TTS 완료가 와도 듣기 시작하지 않고, 다음 문제로도 넘어가지 않는다
+        assertTrue(reduce(paused, RevealWhoAction.SpeechFinished(paused.turnId)).effects.isEmpty())
+        assertEquals(paused, reduce(paused, RevealWhoAction.TextEntered("기린")).state)
+        assertEquals(0, paused.questionIndex)
+
+        val resumed = reduce(paused, RevealWhoAction.Resume(RevealWhoPauseReason.USER))
+        assertFalse(resumed.state.isPaused)
+        assertEquals(RevealWhoPhase.HINT, resumed.state.phase)
+    }
+
+    @Test
+    fun `a near-miss is confirmed instead of being marked wrong`() {
+        val asked = say(answering(), "기림")
+        assertEquals(0, asked.state.hintIndex)
+        assertTrue(asked.state.confirmingAnswer)
+        assertTrue(asked.effects.spoken().contains("'기린'이라고 말했어?"))
+
+        val yes = say(listen(asked.state), "응")
+        assertEquals(1, yes.state.score)
+        assertEquals(1, yes.state.questionIndex)
+    }
+
+    @Test
+    fun `saying no to the confirmation asks again without using a hint`() {
+        val asked = say(answering(), "기림")
+        val no = say(listen(asked.state), "아니")
+
+        assertEquals(0, no.state.score)
+        assertEquals(0, no.state.hintIndex)
+        assertFalse(no.state.confirmingAnswer)
+        // "응"은 되묻는 중이 아닐 때 정답으로 치지 않는다
+        val plainYes = say(listen(no.state), "응")
+        assertEquals(0, plainYes.state.score)
+    }
+
+    @Test
+    fun `repeating the same wrong answer keeps the current hint`() {
+        val first = say(answering(), "코끼리")
+        assertEquals(1, first.state.hintIndex)
+
+        val again = say(listen(first.state), "코끼리요")
+        assertEquals(1, again.state.hintIndex)
+        assertTrue(again.effects.spoken().contains("'코끼리'는 아까 말했어"))
+    }
+
+    @Test
+    fun `network error shows the popup and retry repeats the hint`() {
+        val state = answering()
+        val failed = reduce(state, RevealWhoAction.NetworkFailed(state.turnId))
+        assertEquals(RevealWhoError.NETWORK, failed.state.error)
+        // 오류 중에는 듣기와 버튼 진행이 멈춘다
+        assertTrue(reduce(failed.state, RevealWhoAction.SpeechFinished(failed.state.turnId)).effects.isEmpty())
+        assertEquals(failed.state, reduce(failed.state, RevealWhoAction.NextHintButton).state)
+
+        val retried = reduce(failed.state, RevealWhoAction.Retry)
+        assertEquals(null, retried.state.error)
+        assertTrue(retried.effects.spoken().contains("첫 번째 힌트! 초원에 살아요"))
+    }
+
+    @Test
+    fun `typed answers work when voice input is unavailable`() {
+        val unavailable = listen(reduce(answering(), RevealWhoAction.VoiceUnavailable).state)
+        val t = reduce(unavailable, RevealWhoAction.TextEntered("기린"))
+
+        assertEquals(1, t.state.score)
+        assertEquals(RevealWhoEffect.StopListening, t.effects.first())
+        // 다음 문제에서도 자동 듣기 대신 글자 입력을 기다린다
+        assertTrue(reduce(t.state, RevealWhoAction.SpeechFinished(t.state.turnId)).effects.isEmpty())
+    }
+
+    @Test
+    fun `digits from STT are read as Korean before judging`() {
+        val five = RevealWhoQuestion("오이", RevealWhoTopic.OBJECT, RevealWhoLevel.EASY, listOf("a", "b", "c", "d"))
+        assertTrue(RevealWhoAnswerJudge.isCorrect("52", five).not())
+        assertTrue(RevealWhoAnswerJudge.isCorrect("오이", five))
+        val diary = RevealWhoQuestion("일기", RevealWhoTopic.OBJECT, RevealWhoLevel.EASY, listOf("a", "b", "c", "d"))
+        assertTrue(RevealWhoAnswerJudge.isCorrect("1기", diary))
     }
 
     @Test

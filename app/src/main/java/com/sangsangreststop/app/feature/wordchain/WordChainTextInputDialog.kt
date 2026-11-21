@@ -22,11 +22,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import com.sangsangreststop.app.R
 
-/** '직접 입력' 버튼용 글자 입력 창. 음성 인식이 연결되기 전에는 마이크 버튼도 이 창을 연다. */
+/**
+ * '직접 입력' 버튼용 글자 입력 창. 음성 인식이 연결되기 전에는 마이크 버튼도 이 창을 연다.
+ * 짜잔! 누구?도 음성 인식을 쓸 수 없을 때 [title]·[placeholder]만 바꿔 재사용한다.
+ */
 @Composable
 fun WordChainTextInputDialog(
     onSubmit: (String) -> Unit,
     onDismiss: () -> Unit,
+    title: String = stringResource(R.string.wordchain_input_title),
+    placeholder: String = stringResource(R.string.wordchain_input_placeholder),
 ) {
     var text by rememberSaveable { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
@@ -44,13 +49,13 @@ fun WordChainTextInputDialog(
 
     AlertDialog(
         onDismissRequest = { close(onDismiss) },
-        title = { Text(stringResource(R.string.wordchain_input_title)) },
+        title = { Text(title) },
         text = {
             OutlinedTextField(
                 value = text,
                 onValueChange = { text = it },
                 singleLine = true,
-                placeholder = { Text(stringResource(R.string.wordchain_input_placeholder)) },
+                placeholder = { Text(placeholder) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { submit() }),
                 modifier = Modifier.focusRequester(focusRequester),
